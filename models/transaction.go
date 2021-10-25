@@ -4,15 +4,15 @@ type Transaction struct {
 	From   Account `json:"from"`
 	To     Account `json:"to"`
 	Value  uint    `json:"value"`
-	reason string  `json:"reason"`
+	Reason string  `json:"reason"`
 }
 
-func NewTransaction(from Account, to Account, value uint, data string) *Transaction {
+func NewTransaction(from Account, to Account, value uint, reason string) *Transaction {
 	return &Transaction{
 		From:   from,
 		To:     to,
 		Value:  value,
-		reason: data,
+		Reason: getReason(reason),
 	}
 }
 
@@ -23,8 +23,8 @@ var (
 	LOAN        = "loan"
 )
 
-func (t Transaction) getReason() string {
-	switch t.reason {
+func getReason(reason string) string {
+	switch reason {
 	case "self-reward":
 		return SELF_REWARD
 	case "birthday":

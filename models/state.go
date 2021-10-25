@@ -95,7 +95,7 @@ func (s *State) Persist() error {
 }
 
 func (s *State) apply(tx Transaction) error {
-	if tx.getReason() == SELF_REWARD {
+	if tx.Reason == SELF_REWARD {
 		s.Balances[tx.To] += tx.Value
 		return nil
 	}
