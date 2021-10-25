@@ -49,10 +49,12 @@ func (c *AddTransactionCommand) Execute(args []string) error {
 	}
 
 	//persist new state to disk
-	err = state.Persist()
+	_, err = state.Persist()
 	if err != nil {
 		log.S().Fatalf("cannot persist state to disk: %v", err)
 	}
+
+	state.Print()
 
 	return nil
 }
@@ -76,17 +78,7 @@ func (c *ListTransactionCommand) Execute(args []string) error {
 	}
 	defer state.Close()
 
-	printBalances(state.Balances)
+	state.Print()
 
 	return nil
-}
-
-func printBalances(balances map[models.Account]uint) {
-	log.S().Infof("#####################")
-	log.S().Infof("# Accounts balances #")
-	log.S().Infof("#####################")
-	for account, balance := range balances {
-		log.S().Infof("%s: %d", account, balance)
-	}
-	log.S().Infof("---------------------")
 }
