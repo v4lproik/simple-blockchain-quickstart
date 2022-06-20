@@ -4,24 +4,24 @@ SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 default: build
 
+dep:
+	go mod download
+
 build:
-	 GOARCH=amd64 GOOS=darwin go build -o ${BINARY}-darwin main.go
-     GOARCH=amd64 GOOS=linux go build -o ${BINARY}-linux main.go
-     GOARCH=amd64 GOOS=window go build -o ${BINARY}-windows main.go
+	go build -o ${BINARY}
 
 run:
 	./${BINARY}
 
-build_and_run: build run
-
 clean:
 	go clean -i -v -r
-	rm ${BINARY}-darwin
-	rm ${BINARY}-linux
-	rm ${BINARY}-windows
+	rm ${BINARY}
 
 test:
 	@if [ -f ${TEST} ] ; then ./${TEST} ; fi
+
+vet:
+	go vet
 
 fmt:
 	@gofmt -l -w $(SRC)
