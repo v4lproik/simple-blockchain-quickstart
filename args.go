@@ -6,6 +6,7 @@ import (
 )
 
 var opts struct {
+	RunAsHttpserver      bool   `short:"r" long:"run_as_http_server" description:"Run the application as an http server" required:"false"`
 	GenesisFilePath      string `short:"g" long:"genesis_file_path" description:"Genesis file path" required:"true"`
 	TransactionsFilePath string `short:"d" long:"transactions_file_path" description:"Transactions file path" required:"true"`
 	LogFilePath          string `short:"l" long:"log_file_path" description:"Where application logs will be written. If this value is not specified, the logs will be displayed to the console." required:"false"`
@@ -14,6 +15,7 @@ var opts struct {
 func displayAppConfiguration() {
 	logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
 	logger.Infof("Genesis file: %s", opts.GenesisFilePath)
+	//logger.Infof("Run as http server: %s", opts.RunAsHttpserver)
 	if opts.LogFilePath != "" {
 		logger.Infof("Output in log file: %s", opts.LogFilePath)
 	} else {
