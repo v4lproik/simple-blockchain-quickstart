@@ -16,6 +16,4 @@ logs/.*
 simple-blockchain-quickstart
 /logs/app.log
 /go.sum
-/.idea/modules.xml
-/.idea/simple-blockchain-quickstart.iml
-/.idea/vcs.xml
+/.idea/.*
