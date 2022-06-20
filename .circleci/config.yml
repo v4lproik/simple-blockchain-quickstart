@@ -46,8 +46,8 @@ jobs:
             cd "$CIRCLE_WORKING_DIRECTORY"
             sudo chown -R $(id -u):$(id -g) $CIRCLE_WORKING_DIRECTORY
             echo $CIRCLE_WORKING_DIRECTORY
-            ls -al
-            go mod download
+            make dep
+            make test
 
       - save_cache:
           key: go-mod-cache-v2-{{ arch }}-{{ .Branch }}-{{ checksum "go.mod" }}

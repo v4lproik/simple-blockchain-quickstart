@@ -1,6 +1,7 @@
 BINARY=simple-blockchain-quickstart
 
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
+TEST=deployment_script/test.sh
 
 default: build
 
