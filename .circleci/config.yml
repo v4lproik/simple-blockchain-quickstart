@@ -1,0 +1,59 @@
+version: 2
+
+jobs:
+  build:
+    machine: true
+    working_directory: /home/circleci/.go_workspace/src/github.com/v4lproik/simple-blockchain-quickstart
+    environment:
+      #container variables
+      GOPATH: "/home/circleci/.go_workspace"
+      GODIST: "go1.18.3.linux-amd64.tar.gz"
+
+      #api variables
+      SBQ_ENV: "ci_cd"
+      SBQ_SERVER_ADDRESS: "localhost"
+      SBQ_SERVER_PORT: "8080"
+      SBQ_SERVER_IS_SSL: "false"
+      SBQ_SERVER_CERT_FILE: ""
+      SBQ_SERVER_KEY_FILE: ""
+      SBQ_SERVER_HTTP_CORS_ALLOWED_ORIGINS: "http://localhost:8080"
+      SBQ_SERVER_HTTP_CORS_ALLOWED_METHODS: "GET,POST"
+      SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS: ""
+
+    steps:
+      - checkout
+
+      #try to cache docker images (activate when paid plans is enabled...)
+      #      - setup_remote_docker:
+      #          docker_layer_caching: true
+
+      - run:
+          name: Install golang
+          command: |
+            mkdir -p download
+            test -e download/$GODIST || curl -o download/$GODIST https://storage.googleapis.com/golang/$GODIST
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf download/$GODIST
+
+      #attempt to cache go deps
+      - restore_cache:
+          keys:
+            - go-mod-cache-v2-{{ arch }}-{{ .Branch }}-{{ checksum "go.mod" }}
+
+      - run:
+          name: Install dependencies & Launch tests
+          command: |
+            cd "/home/circleci/.go_workspace/src/github.com/v4lproik/simple-blockchain-quickstart"
+            sudo chown -R $(id -u):$(id -g) /home/circleci/.go_workspace
+            make dep
+            make test
+
+      - save_cache:
+          key: go-mod-cache-v2-{{ arch }}-{{ .Branch }}-{{ checksum "go.mod" }}
+          paths:
+            - "/home/circleci/.go_workspace/pkg/mod"
+
+      - run:
+          name: Upload cover report
+          command: |
+            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
