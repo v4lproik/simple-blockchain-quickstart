@@ -47,6 +47,7 @@ jobs:
             sudo chown -R $(id -u):$(id -g) $CIRCLE_WORKING_DIRECTORY
             sudo chmod +x $CIRCLE_WORKING_DIRECTORY/deployment_script/test.sh
             make dep
+            ls -al $CIRCLE_WORKING_DIRECTORY
             make test
 
       - save_cache:
