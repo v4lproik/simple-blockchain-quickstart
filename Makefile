@@ -12,6 +12,8 @@ build:
 run:
 	./${BINARY}
 
+build_and_run: build run
+
 clean:
 	go clean -i -v -r
 	rm ${BINARY}-darwin
