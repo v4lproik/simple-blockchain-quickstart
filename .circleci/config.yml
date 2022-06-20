@@ -45,7 +45,7 @@ jobs:
           command: |
             cd "$CIRCLE_WORKING_DIRECTORY"
             sudo chown -R $(id -u):$(id -g) $CIRCLE_WORKING_DIRECTORY
-            echo $CIRCLE_WORKING_DIRECTORY
+            sudo chmod +x $CIRCLE_WORKING_DIRECTORY/deployment_script/test.sh
             make dep
             make test
 
