@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/v4lproik/simple-blockchain-quickstart/models"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	log "go.uber.org/zap"
 )
 
