@@ -17,3 +17,4 @@ simple-blockchain-quickstart
 /logs/app.log
 /go.sum
 /.idea/.*
+coverage.txt
