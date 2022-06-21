@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/caarlos0/env/v6"
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/jessevdk/go-flags"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
 	"time"
 )
@@ -54,6 +56,21 @@ func main() {
 		//stack opt means whether to append to the output the stack info
 		r.Use(ginzap.RecoveryWithZap(logger.Desugar(), true))
 		r.Use(gin.Recovery())
+
+		//start the functional domains
+		healthz.RunDomain(r)
+
+		//start server according to the configuration passed in parameter or env variables
+		serverOpts := apiConf.Server.Options
+		serverPort := apiConf.Server.Port
+		serverAddress := apiConf.Server.Address
+		if serverOpts.IsSsl {
+			logger.Info("start server with tls")
+			r.RunTLS(fmt.Sprintf(":%d", serverPort), serverOpts.CertFile, serverOpts.KeyFile)
+		} else {
+			logger.Info("start server without tls")
+			r.Run(fmt.Sprintf("%s:%d", serverAddress, serverPort))
+		}
 	} else {
 		//run as client
 		//add commands and subcommands. eg. ./bin transaction list
