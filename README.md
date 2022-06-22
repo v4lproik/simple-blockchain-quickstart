@@ -70,3 +70,4 @@ make test
  - Add an env variable which enumerates the functional domains that need to start
  - Add a switch for public/private access through RBAC
  - Add the gas component
+ - Add a test seeder and remove the blocks_test.db and genesis_test.db
