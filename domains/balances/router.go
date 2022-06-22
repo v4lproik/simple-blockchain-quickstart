@@ -21,25 +21,19 @@ func BalancesRegister(router *gin.RouterGroup, env *BalancesEnv) {
 
 func (env BalancesEnv) ListBalances(c *gin.Context) {
 	state, err := models.NewStateFromFile(env.bddConf.GenesisFilePath(), env.bddConf.TransactionFilePath())
-	if err != nil {
-		//TODO get which type of error happened and map it to http error for clarity
+	if err != nil || state == nil {
+		//TODO add type of error for NewStateFromFile
 		AbortWithError(c, *env.errorBuilder.NewUnknownError())
 		return
 	}
 
-	if state == nil {
-		AbortWithError(c, *env.errorBuilder.New(404, "state could not be found"))
-		return
-	}
-
-	balances := state.Balances
-	if len(balances) == 0 {
+	if len(state.Balances) == 0 {
 		AbortWithError(c, *env.errorBuilder.New(404, "balances could not be found"))
 		return
 	}
 
 	//map state with state response
-	serializer := BalancesSerializer{balances}
+	serializer := BalancesSerializer{state.Balances}
 
 	//render
 	c.JSON(http.StatusOK, gin.H{"balances": serializer.Response()})
