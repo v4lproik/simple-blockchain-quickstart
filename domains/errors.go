@@ -2,6 +2,7 @@ package domains
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -12,7 +13,7 @@ func NewErrorBuilder() ErrorBuilder {
 }
 
 func (e *ErrorBuilder) New(code int, msg string, context ...interface{}) *Error {
-	resp := e.NewUnknownError()
+	resp := &Error{}
 
 	resp.Err.Code = code
 	resp.Err.Status = http.StatusText(code)
@@ -68,4 +69,8 @@ func (err *Error) Error() string {
 	}
 
 	return res
+}
+
+func AbortWithError(c *gin.Context, error Error) {
+	c.AbortWithStatusJSON(error.Code(), error)
 }
