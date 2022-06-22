@@ -36,16 +36,6 @@ func NewBlock(parent Hash, time uint64, txs []Transaction) Block {
 	return Block{BlockHeader{parent, time}, txs}
 }
 
-func (s *State) applyBlock(b Block) error {
-	for _, tx := range b.Txs {
-		if err := s.apply(tx); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (b Block) Hash() (Hash, error) {
 	blockJson, err := json.Marshal(b)
 	if err != nil {

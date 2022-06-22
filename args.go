@@ -15,7 +15,6 @@ var opts struct {
 func displayAppConfiguration() {
 	logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
 	logger.Infof("Genesis file: %s", opts.GenesisFilePath)
-	//logger.Infof("Run as http server: %s", opts.RunAsHttpserver)
 	if opts.LogFilePath != "" {
 		logger.Infof("Output in log file: %s", opts.LogFilePath)
 	} else {

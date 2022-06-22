@@ -44,12 +44,27 @@ go build -o simple-blockchain-quickstart
 ### Run as node
 ```
 ./simple-blockchain-quickstart -g ./databases/genesis.json -d ./databases/blocks.db -r
+1.6558218035227594e+09  info    Transactions file: ./databases/blocks.db
+1.6558218035228403e+09  info    Genesis file: ./databases/genesis.json
+1.6558218035228572e+09  info    Output: console
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:   export GIN_MODE=release
+ - using code:  gin.SetMode(gin.ReleaseMode)
 
+[GIN-debug] GET    /api/healthz              --> github.com/v4lproik/simple-blockchain-quickstart/domains/healthz.RunDomain.func1 (5 handlers)
+1.6558218035261767e+09  info    start server without tls
+[GIN-debug] Listening and serving HTTP on 127.0.0.1:8080
 ```
 ## Testing
 ```
 make test
 ```
 ## TODO
- - extend cli commands via grpc calls  
- - break common components into a common package
+ - Add genesis and transaction files integrity check before launching the app
+ - Extend cli commands via grpc calls  
+ ~~- Break common components into a common package~~
+ - Add tests
+ - Create database flavour
+ ~~- Add custom api errors~~
+ - Add error mapping between the commands package error to api error (right now we assume they are all unknown error)
+ - Add an env variable which enumerates the functional domains that need to start
