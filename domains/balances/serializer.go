@@ -1,6 +1,8 @@
 package balances
 
-import "github.com/v4lproik/simple-blockchain-quickstart/common/models"
+import (
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+)
 
 type BalancesSerializer struct {
 	balances map[models.Account]uint
@@ -15,6 +17,7 @@ type Account string
 
 func (t BalancesSerializer) Response() []BalanceResponse {
 	balances := t.balances
+
 	response := make([]BalanceResponse, len(balances))
 	i := 0
 	for balance, val := range balances {
