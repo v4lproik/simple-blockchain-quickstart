@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 
 var (
 	testBlockchainFileDatabaseConf = &TestBlockchainFileDatabaseConf{"../../databases/genesis.json", "../../databases/blocks.db", false, false}
+	serviceState                   services.StateService
 	standardHttpValidationFunc     = func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
 		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
 		asserts.Equal(wBodyE, wBodyA, "Response Content - "+testName)
@@ -26,6 +28,7 @@ func setTestBlockchainFileDatabaseConf(genesisFilePath string, transactionFilePa
 	testBlockchainFileDatabaseConf.transactionFilePath = transactionFilePath
 	testBlockchainFileDatabaseConf.isWrongGenesisFilePath = isWrongGenesisFilePath
 	testBlockchainFileDatabaseConf.isWrongTransactionFilePath = isWrongTransactionFilePath
+	serviceState = services.NewFileStateService(testBlockchainFileDatabaseConf)
 }
 
 type TestBalanceResponse struct {
@@ -80,7 +83,6 @@ var ListBalancesDomainTests = []struct {
 	{
 		func(req *http.Request) {
 			setTestBlockchainFileDatabaseConf("../../databases/genesis.json", "../../databases/blocks.db", false, true)
-
 		},
 		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		"POST",
@@ -162,7 +164,8 @@ func TestBalancesEnv_ListBalances(t *testing.T) {
 }
 
 func initServer(r *gin.Engine) {
-	RunDomain(r, testBlockchainFileDatabaseConf)
+	serviceState = services.NewFileStateService(testBlockchainFileDatabaseConf)
+	RunDomain(r, serviceState)
 }
 
 //test models//

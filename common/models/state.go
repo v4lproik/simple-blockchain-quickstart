@@ -11,15 +11,16 @@ import (
 )
 
 type State interface {
-	Add(transaction Transaction)
+	Add(tx Transaction) error
+	Balances() map[Account]uint
 	Persist() (Hash, error)
 	Close() error
 	GetLatestBlockHash() Hash
 	Print()
 }
 
-type StateFromFile struct {
-	Balances         map[Account]uint
+type FromFileState struct {
+	balances         map[Account]uint
 	transactionsPool []Transaction
 	dbFile           *os.File
 	latestBlockHash  Hash
@@ -31,7 +32,7 @@ type GenesisFile struct {
 	Balances map[string]uint `json:"balances"`
 }
 
-func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*StateFromFile, error) {
+func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State, error) {
 	//read genesis file
 	file, err := ioutil.ReadFile(genesisFilePath)
 	if err != nil {
@@ -57,7 +58,7 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*Stat
 	}
 
 	scanner := bufio.NewScanner(f)
-	state := &StateFromFile{balances, make([]Transaction, 0), f, Hash{}}
+	state := &FromFileState{balances, make([]Transaction, 0), f, Hash{}}
 
 	//for each block found in database
 	for scanner.Scan() {
@@ -80,11 +81,14 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*Stat
 		//the hash reflecting the state is now the latest block being added to the database
 		state.latestBlockHash = blockDB.Key
 	}
-
 	return state, nil
 }
 
-func (s *StateFromFile) Add(tx Transaction) error {
+func (s *FromFileState) Balances() map[Account]uint {
+	return s.balances
+}
+
+func (s *FromFileState) Add(tx Transaction) error {
 	if err := s.apply(tx); err != nil {
 		return err
 	}
@@ -92,7 +96,7 @@ func (s *StateFromFile) Add(tx Transaction) error {
 	return nil
 }
 
-func (s *StateFromFile) Persist() (Hash, error) {
+func (s *FromFileState) Persist() (Hash, error) {
 	hash := Hash{}
 
 	//create a new Block only with the new transactions
@@ -130,7 +134,7 @@ func (s *StateFromFile) Persist() (Hash, error) {
 
 }
 
-func (s *StateFromFile) applyBlock(b Block) error {
+func (s *FromFileState) applyBlock(b Block) error {
 	for _, tx := range b.Txs {
 		if err := s.apply(tx); err != nil {
 			return err
@@ -140,38 +144,38 @@ func (s *StateFromFile) applyBlock(b Block) error {
 	return nil
 }
 
-func (s *StateFromFile) apply(tx Transaction) error {
+func (s *FromFileState) apply(tx Transaction) error {
 	if tx.Reason == SELF_REWARD {
 		//refuse the transaction if it's a self reward with different from/to address
 		if !tx.To.isSameAccount(tx.From) {
 			return fmt.Errorf("from and to accounts should be the same as self-reward as been specified as a reason for the transaction")
 		}
-		s.Balances[tx.To] += tx.Value
+		s.balances[tx.To] += tx.Value
 		return nil
 	}
-	if tx.Value > s.Balances[tx.From] {
+	if tx.Value > s.balances[tx.From] {
 		return fmt.Errorf("insufficient balance")
 	}
-	s.Balances[tx.From] -= tx.Value
-	s.Balances[tx.To] += tx.Value
+	s.balances[tx.From] -= tx.Value
+	s.balances[tx.To] += tx.Value
 	return nil
 }
 
-func (s *StateFromFile) Close() error {
+func (s *FromFileState) Close() error {
 	return s.dbFile.Close()
 }
 
-func (s *StateFromFile) GetLatestBlockHash() Hash {
+func (s *FromFileState) GetLatestBlockHash() Hash {
 	return s.latestBlockHash
 }
 
-func (s *StateFromFile) Print() {
+func (s *FromFileState) Print() {
 	log.S().Infof("#####################")
 	log.S().Infof("# Accounts balances #")
 	log.S().Infof("#####################")
 	log.S().Infof("State: %x", s.GetLatestBlockHash())
 	log.S().Infof("---------------------")
-	for account, balance := range s.Balances {
+	for account, balance := range s.balances {
 		log.S().Infof("%s: %d", account, balance)
 	}
 	log.S().Infof("---------------------")

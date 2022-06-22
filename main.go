@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
@@ -62,7 +63,9 @@ func main() {
 		//start the functional domains
 		//TODO: Enumerate which domains need to start at bootstrap
 		healthz.RunDomain(r)
-		balances.RunDomain(r, conf.NewBlockchainFileDatabaseConf(opts.GenesisFilePath, opts.TransactionsFilePath))
+
+		fileStateService := services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(opts.GenesisFilePath, opts.TransactionsFilePath))
+		balances.RunDomain(r, fileStateService)
 
 		//start server according to the configuration passed in parameter or env variables
 		serverOpts := apiConf.Server.Options

@@ -63,7 +63,7 @@ make test
  - Add genesis and transaction files integrity check before launching the app
  - Extend cli commands via grpc calls  
  - ~~Break common components into a common package~~
- - Add tests
+ - ~~Add tests~~
  - Create database flavour
  - ~~Add custom api errors~~
  - Add error mapping between the commands package error to api error (right now we assume they are all unknown error)

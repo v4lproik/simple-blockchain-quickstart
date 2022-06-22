@@ -2,6 +2,8 @@ package commands
 
 import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	log "go.uber.org/zap"
 )
 
@@ -60,24 +62,21 @@ func (c *AddTransactionCommand) Execute(args []string) error {
 }
 
 type ListTransactionCommand struct {
-	opts TransactionCommandsOpts
+	stateService services.StateService
 }
 
 func NewListTransactionCommand(genesisFilePath string, transactionsFilePath string) *ListTransactionCommand {
 	list := new(ListTransactionCommand)
-	list.opts.GenesisFilePath = genesisFilePath
-	list.opts.TransactionsFilePath = transactionsFilePath
+	list.stateService = services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(genesisFilePath, transactionsFilePath))
 
 	return list
 }
 
 func (c *ListTransactionCommand) Execute(args []string) error {
-	state, err := models.NewStateFromFile(c.opts.GenesisFilePath, c.opts.TransactionsFilePath)
+	err, state := c.stateService.GetState()
 	if err != nil {
-		log.S().Fatalf("cannot get blockchain state: %v", err)
+		return err
 	}
-	defer state.Close()
-
 	state.Print()
 
 	return nil
