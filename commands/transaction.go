@@ -36,7 +36,7 @@ func (c *AddTransactionCommand) Execute(args []string) error {
 	tx := models.NewTransaction(models.NewAccount(c.From), models.NewAccount(c.To), c.Value, c.Reason)
 
 	//load state
-	state, err := models.NewState(c.opts.GenesisFilePath, c.opts.TransactionsFilePath)
+	state, err := models.NewStateFromFile(c.opts.GenesisFilePath, c.opts.TransactionsFilePath)
 	if err != nil {
 		log.S().Fatalf("cannot get blockchain state: %v", err)
 	}
@@ -72,7 +72,7 @@ func NewListTransactionCommand(genesisFilePath string, transactionsFilePath stri
 }
 
 func (c *ListTransactionCommand) Execute(args []string) error {
-	state, err := models.NewState(c.opts.GenesisFilePath, c.opts.TransactionsFilePath)
+	state, err := models.NewStateFromFile(c.opts.GenesisFilePath, c.opts.TransactionsFilePath)
 	if err != nil {
 		log.S().Fatalf("cannot get blockchain state: %v", err)
 	}

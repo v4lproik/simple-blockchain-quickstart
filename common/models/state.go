@@ -10,7 +10,15 @@ import (
 	"time"
 )
 
-type State struct {
+type State interface {
+	Add(transaction Transaction)
+	Persist() (Hash, error)
+	Close() error
+	GetLatestBlockHash() Hash
+	Print()
+}
+
+type StateFromFile struct {
 	Balances         map[Account]uint
 	transactionsPool []Transaction
 	dbFile           *os.File
@@ -23,7 +31,7 @@ type GenesisFile struct {
 	Balances map[string]uint `json:"balances"`
 }
 
-func NewState(genesisFilePath string, transactionFilePath string) (*State, error) {
+func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*StateFromFile, error) {
 	//read genesis file
 	file, err := ioutil.ReadFile(genesisFilePath)
 	if err != nil {
@@ -49,7 +57,7 @@ func NewState(genesisFilePath string, transactionFilePath string) (*State, error
 	}
 
 	scanner := bufio.NewScanner(f)
-	state := &State{balances, make([]Transaction, 0), f, Hash{}}
+	state := &StateFromFile{balances, make([]Transaction, 0), f, Hash{}}
 
 	//for each block found in database
 	for scanner.Scan() {
@@ -76,7 +84,7 @@ func NewState(genesisFilePath string, transactionFilePath string) (*State, error
 	return state, nil
 }
 
-func (s *State) Add(tx Transaction) error {
+func (s *StateFromFile) Add(tx Transaction) error {
 	if err := s.apply(tx); err != nil {
 		return err
 	}
@@ -84,7 +92,7 @@ func (s *State) Add(tx Transaction) error {
 	return nil
 }
 
-func (s *State) Persist() (Hash, error) {
+func (s *StateFromFile) Persist() (Hash, error) {
 	hash := Hash{}
 
 	//create a new Block only with the new transactions
@@ -122,7 +130,17 @@ func (s *State) Persist() (Hash, error) {
 
 }
 
-func (s *State) apply(tx Transaction) error {
+func (s *StateFromFile) applyBlock(b Block) error {
+	for _, tx := range b.Txs {
+		if err := s.apply(tx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *StateFromFile) apply(tx Transaction) error {
 	if tx.Reason == SELF_REWARD {
 		//refuse the transaction if it's a self reward with different from/to address
 		if !tx.To.isSameAccount(tx.From) {
@@ -139,17 +157,15 @@ func (s *State) apply(tx Transaction) error {
 	return nil
 }
 
-func (s *State) Close() error {
+func (s *StateFromFile) Close() error {
 	return s.dbFile.Close()
 }
 
-//getters
-func (s *State) GetLatestBlockHash() Hash {
+func (s *StateFromFile) GetLatestBlockHash() Hash {
 	return s.latestBlockHash
 }
 
-//print
-func (s *State) Print() {
+func (s *StateFromFile) Print() {
 	log.S().Infof("#####################")
 	log.S().Infof("# Accounts balances #")
 	log.S().Infof("#####################")
