@@ -2,18 +2,20 @@ package balances
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains"
 )
 
-func RunDomain(r *gin.Engine, genesisFilePath string, transactionFilePath string, middlewares ...gin.HandlerFunc) {
-	v1 := r.Group("/api/balances")
+const BALANCES_DOMAIN_URL = "/api/balances"
+
+func RunDomain(r *gin.Engine, bddConf conf.FileDatabaseConf, middlewares ...gin.HandlerFunc) {
+	v1 := r.Group(BALANCES_DOMAIN_URL)
 	for _, middleware := range middlewares {
 		v1.Use(middleware)
 	}
 
 	BalancesRegister(v1.Group("/"), &BalancesEnv{
-		genesisFilePath:     genesisFilePath,
-		transactionFilePath: transactionFilePath,
-		errorBuilder:        domains.NewErrorBuilder(),
+		bddConf:      bddConf,
+		errorBuilder: domains.NewErrorBuilder(),
 	})
 }

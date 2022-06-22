@@ -3,22 +3,24 @@ package balances
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
 	"net/http"
 )
 
+const LIST_BALANCES_ENDPOINT = "/"
+
 type BalancesEnv struct {
-	genesisFilePath     string
-	transactionFilePath string
-	errorBuilder        ErrorBuilder
+	bddConf      conf.FileDatabaseConf
+	errorBuilder ErrorBuilder
 }
 
 func BalancesRegister(router *gin.RouterGroup, env *BalancesEnv) {
-	router.POST("/", env.ListBalances)
+	router.POST(LIST_BALANCES_ENDPOINT, env.ListBalances)
 }
 
 func (env BalancesEnv) ListBalances(c *gin.Context) {
-	state, err := models.NewStateFromFile(env.genesisFilePath, env.transactionFilePath)
+	state, err := models.NewStateFromFile(env.bddConf.GenesisFilePath(), env.bddConf.TransactionFilePath())
 	if err != nil {
 		//TODO get which type of error happened and map it to http error for clarity
 		AbortWithError(c, *env.errorBuilder.NewUnknownError())
