@@ -11,6 +11,7 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
 	"time"
 )
@@ -66,6 +67,7 @@ func main() {
 
 		fileStateService := services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(opts.GenesisFilePath, opts.TransactionsFilePath))
 		balances.RunDomain(r, fileStateService)
+		transactions.RunDomain(r, fileStateService)
 
 		//start server according to the configuration passed in parameter or env variables
 		serverOpts := apiConf.Server.Options

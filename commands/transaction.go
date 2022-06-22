@@ -4,7 +4,6 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	log "go.uber.org/zap"
 )
 
 type TransactionCommands struct {
@@ -18,46 +17,38 @@ type TransactionCommandsOpts struct {
 }
 
 type AddTransactionCommand struct {
-	opts   TransactionCommandsOpts
-	From   string `short:"f" long:"from" description:"Transaction account to get tokens from" required:"true"`
-	To     string `short:"t" long:"to" description:"Transaction account to send tokens to" required:"true"`
-	Value  uint   `short:"v" long:"value" description:"Value of the transaction" required:"true"`
-	Reason string `short:"r" long:"reason" description:"Reason of the transaction" required:"false"`
+	stateService       services.StateService
+	transactionService services.TransactionService
+	From               string `short:"f" long:"from" description:"Transaction account to get tokens from" required:"true"`
+	To                 string `short:"t" long:"to" description:"Transaction account to send tokens to" required:"true"`
+	Value              uint   `short:"v" long:"value" description:"Value of the transaction" required:"true"`
+	Reason             string `short:"r" long:"reason" description:"Reason of the transaction" required:"false"`
 }
 
 func NewAddTransactionCommand(genesisFilePath string, transactionsFilePath string) *AddTransactionCommand {
 	add := new(AddTransactionCommand)
-	add.opts.GenesisFilePath = genesisFilePath
-	add.opts.TransactionsFilePath = transactionsFilePath
+	add.stateService = services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(genesisFilePath, transactionsFilePath))
+	add.transactionService = services.NewFileTransactionService()
 
 	return add
 }
 
 func (c *AddTransactionCommand) Execute(args []string) error {
-	//get command line information
+	//create transaction object
 	tx := models.NewTransaction(models.NewAccount(c.From), models.NewAccount(c.To), c.Value, c.Reason)
 
-	//load state
-	state, err := models.NewStateFromFile(c.opts.GenesisFilePath, c.opts.TransactionsFilePath)
+	//get the state
+	state, err := c.stateService.GetState()
 	if err != nil {
-		log.S().Fatalf("cannot get blockchain state: %v", err)
-	}
-	defer state.Close()
-
-	//add transaction to state
-	err = state.Add(*tx)
-	if err != nil {
-		log.S().Fatalf("cannot add transaction to state: %v", err)
+		return err
 	}
 
-	//persist new state to disk
-	_, err = state.Persist()
+	_, err = c.transactionService.AddTransaction(state, tx)
 	if err != nil {
-		log.S().Fatalf("cannot persist state to disk: %v", err)
+		return err
 	}
 
 	state.Print()
-
 	return nil
 }
 
@@ -73,7 +64,7 @@ func NewListTransactionCommand(genesisFilePath string, transactionsFilePath stri
 }
 
 func (c *ListTransactionCommand) Execute(args []string) error {
-	err, state := c.stateService.GetState()
+	state, err := c.stateService.GetState()
 	if err != nil {
 		return err
 	}

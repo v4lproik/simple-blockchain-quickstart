@@ -7,7 +7,7 @@ import (
 )
 
 type StateService interface {
-	GetState() (error, models.State)
+	GetState() (models.State, error)
 }
 
 type FileStateService struct {
@@ -20,12 +20,11 @@ func NewFileStateService(fileDatabaseConf conf.FileDatabaseConf) FileStateServic
 	}
 }
 
-func (a FileStateService) GetState() (error, models.State) {
+func (a FileStateService) GetState() (models.State, error) {
 	state, err := models.NewStateFromFile(a.fileDatabaseConf.GenesisFilePath(), a.fileDatabaseConf.TransactionFilePath())
 	if err != nil {
-		return fmt.Errorf("cannot get blockchain state: %v", err), nil
+		return nil, fmt.Errorf("cannot get blockchain state: %v", err)
 	}
-	defer state.Close()
 
-	return nil, state
+	return state, nil
 }

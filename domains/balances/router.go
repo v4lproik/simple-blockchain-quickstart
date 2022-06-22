@@ -19,7 +19,7 @@ func BalancesRegister(router *gin.RouterGroup, env *BalancesEnv) {
 }
 
 func (env BalancesEnv) ListBalances(c *gin.Context) {
-	err, state := env.stateService.GetState()
+	state, err := env.stateService.GetState()
 	if err != nil || state == nil {
 		//TODO add type of error for NewStateFromFile
 		AbortWithError(c, *env.errorBuilder.NewUnknownError())
