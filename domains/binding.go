@@ -7,6 +7,27 @@ import (
 	"net/http"
 )
 
+//gin-Gonic Bind Format Error
+//Inspired from https://www.convictional.com/blog/gin-validation
+type ErrorMsg struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+func getErrorMsg(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "lte":
+		return "Should be less than " + fe.Param()
+	case "gte":
+		return "Should be greater than " + fe.Param()
+	case "enum":
+		return "The value cannot be submitted"
+	}
+	return "Unknown error"
+}
+
 func ShouldBind(c *gin.Context, errorBuilder ErrorBuilder, errMsg string, params interface{}) *Error {
 	if err := c.ShouldBind(params); err != nil {
 		var ve validator.ValidationErrors

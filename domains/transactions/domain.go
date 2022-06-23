@@ -8,14 +8,15 @@ import (
 
 const BALANCES_DOMAIN_URL = "/api/transactions"
 
-func RunDomain(r *gin.Engine, stateService services.StateService, middlewares ...gin.HandlerFunc) {
+func RunDomain(r *gin.Engine, stateService services.StateService, transactionService services.TransactionService, middlewares ...gin.HandlerFunc) {
 	v1 := r.Group(BALANCES_DOMAIN_URL)
 	for _, middleware := range middlewares {
 		v1.Use(middleware)
 	}
 
 	TransactionsRegister(v1.Group("/"), &TransactionsEnv{
-		stateService: stateService,
-		errorBuilder: domains.NewErrorBuilder(),
+		stateService:       stateService,
+		transactionService: transactionService,
+		errorBuilder:       domains.NewErrorBuilder(),
 	})
 }

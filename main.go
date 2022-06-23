@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jessevdk/go-flags"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
 
 func main() {
@@ -23,6 +24,11 @@ func main() {
 
 	//run as a node
 	if opts.RunAsHttpserver {
+		//add specific json validators used by endpoints
+		validatorService := new(services.ValidatorService)
+		validatorService.AddValidators()
+
+		//run the http server
 		runHttpServer()
 	} else {
 		//run as client

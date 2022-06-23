@@ -4,28 +4,35 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
-type BalancesSerializer struct {
-	balances map[models.Account]uint
+type TransactionSerializer struct {
+	hash        models.Hash
+	transaction models.Transaction
 }
 
-type BalanceResponse struct {
-	Account Account `json:"account"`
-	Value   uint    `json:"value"`
+type TransactionResponse struct {
+	Transaction struct {
+		Hash   models.Hash    `json:"hash"`
+		From   models.Account `json:"from"`
+		To     models.Account `json:"to"`
+		Value  uint           `json:"value"`
+		Reason string         `json:"reason"`
+	} `json:"transaction"`
 }
 
-type Account string
-
-func (t BalancesSerializer) Response() []BalanceResponse {
-	balances := t.balances
-
-	response := make([]BalanceResponse, len(balances))
-	i := 0
-	for balance, val := range balances {
-		response[i] = BalanceResponse{
-			Account: Account(balance),
-			Value:   val,
-		}
-		i++
+func (t TransactionSerializer) Response() TransactionResponse {
+	return TransactionResponse{
+		Transaction: struct {
+			Hash   models.Hash    `json:"hash"`
+			From   models.Account `json:"from"`
+			To     models.Account `json:"to"`
+			Value  uint           `json:"value"`
+			Reason string         `json:"reason"`
+		}{
+			t.hash,
+			t.transaction.From,
+			t.transaction.To,
+			t.transaction.Value,
+			t.transaction.Reason,
+		},
 	}
-	return response
 }

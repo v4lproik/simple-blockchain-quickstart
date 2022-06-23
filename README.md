@@ -3,9 +3,10 @@ This is merely a skeleton that helps you quickly set up a simplified version of 
 ## Getting started
 ### Install Golang & Useful packages
 1. Install goenv
-1. Install make
-2. Install golang => 1.18.3
-3. Download dependencies
+2. Install make
+3. Install [protoc](https://grpc.io/docs/protoc-installation/)
+4. Install golang => 1.18.3
+5. Download dependencies
 ```
 make dep
 ```
@@ -71,3 +72,5 @@ make test
  - Add a switch for public/private access through RBAC
  - Add the gas component
  - Add a test seeder and remove the blocks_test.db and genesis_test.db
+ - ~~Add better error message when parsing a JSON payload through BindJson~~
+ - Add error encapsulation through the different layer in order to deliver better http error code
