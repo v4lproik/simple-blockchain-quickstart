@@ -12,18 +12,20 @@ func NewTransaction(from Account, to Account, value uint, reason string) *Transa
 		From:   from,
 		To:     to,
 		Value:  value,
-		Reason: getReason(reason),
+		Reason: string(getReason(reason)),
 	}
 }
 
-var (
-	UNKNOWN     = ""
-	SELF_REWARD = "self-reward"
-	BIRTHDAY    = "birthday"
-	LOAN        = "loan"
+type Reason string
+
+const (
+	OTHER       Reason = ""
+	SELF_REWARD        = "self-reward"
+	BIRTHDAY           = "birthday"
+	LOAN               = "loan"
 )
 
-func getReason(reason string) string {
+func getReason(reason string) Reason {
 	switch reason {
 	case "self-reward":
 		return SELF_REWARD
@@ -32,5 +34,14 @@ func getReason(reason string) string {
 	case "loan":
 		return LOAN
 	}
-	return UNKNOWN
+	return OTHER
+}
+
+func (s Reason) IsValid() bool {
+	switch s {
+	case OTHER, SELF_REWARD, BIRTHDAY, LOAN:
+		return true
+	}
+
+	return false
 }

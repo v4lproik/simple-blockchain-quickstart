@@ -71,6 +71,7 @@ func (err *Error) Error() string {
 	return res
 }
 
+//utility formatting API error to the client
 func AbortWithError(c *gin.Context, error Error) {
 	c.AbortWithStatusJSON(error.Code(), error)
 }
