@@ -26,6 +26,8 @@ func getErrorMsg(fe validator.FieldError) string {
 		return "The value cannot be submitted"
 	case "password":
 		return "The password doesn't comply with the policy (min 8 char with min 1 upper, 1 number and 1 symbol)"
+	case "account":
+		return "The account is not an Ethereum style account (eg. 0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf)"
 	}
 	return "Unknown error"
 }

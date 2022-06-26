@@ -48,7 +48,7 @@ var ListBalancesDomainTests = []struct {
 		url:          BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		method:       "POST",
 		expectedCode: http.StatusOK,
-		jsonResponse: `{"balances":[{"account":"cloudvenger","value":1003000},{"account":"v4lproik","value":998000}]}`,
+		jsonResponse: `{"balances":[{"account":"0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf","value":1003000},{"account":"0x7b65a12633dbe9a413b17db515732d69e684ebe2","value":998000}]}`,
 		validationFunc: func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
 			var balances TestBalanceResponse
 			err := json.Unmarshal([]byte(wBodyA), &balances)

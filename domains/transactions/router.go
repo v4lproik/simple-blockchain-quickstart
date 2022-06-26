@@ -21,9 +21,9 @@ func TransactionsRegister(router *gin.RouterGroup, env *TransactionsEnv) {
 }
 
 type AddTransactionParams struct {
-	From   string        `json:"from" binding:"required,gte=2"`
-	To     string        `json:"to" binding:"required,gte=2"`
-	Value  uint          `json:"value" binding:"required"`
+	From   string        `json:"from" binding:"required,account"`
+	To     string        `json:"to" binding:"required,account"`
+	Value  uint          `json:"value" binding:"required,gte=1"`
 	Reason models.Reason `json:"reason" binding:"omitempty,enum"`
 }
 
@@ -36,9 +36,11 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 	}
 
 	//create a transaction
+	from, _ := models.NewAccount(params.From)
+	to, _ := models.NewAccount(params.To)
 	tx := models.NewTransaction(
-		models.Account(params.From),
-		models.Account(params.To),
+		from,
+		to,
 		params.Value,
 		string(params.Reason),
 	)

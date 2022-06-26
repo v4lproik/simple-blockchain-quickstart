@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	log "go.uber.org/zap"
@@ -53,6 +54,15 @@ func ValidatePassword(fl validator.FieldLevel) bool {
 	return true
 }
 
+func ValidateAccount(fl validator.FieldLevel) bool {
+	if account, ok := fl.Field().Interface().(string); ok {
+		if !common.IsHexAddress(account) {
+			return false
+		}
+	}
+	return true
+}
+
 func (v ValidatorService) AddValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		err := v.RegisterValidation("enum", ValidateEnum)
@@ -62,6 +72,10 @@ func (v ValidatorService) AddValidators() {
 		err = v.RegisterValidation("password", ValidatePassword)
 		if err != nil {
 			log.S().Fatalf("custom validator password cannot be registered %v", err)
+		}
+		err = v.RegisterValidation("account", ValidateAccount)
+		if err != nil {
+			log.S().Fatalf("custom validator account cannot be registered %v", err)
 		}
 	}
 }

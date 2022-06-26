@@ -48,7 +48,11 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State
 
 	balances := make(map[Account]uint)
 	for account, balance := range data.Balances {
-		balances[NewAccount(account)] = balance
+		acc, err := NewAccount(account)
+		if err != nil {
+			return nil, fmt.Errorf("error building state from file %v", err)
+		}
+		balances[acc] = balance
 	}
 
 	//read transactions database

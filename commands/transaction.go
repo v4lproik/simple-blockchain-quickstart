@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -33,9 +34,31 @@ func NewAddTransactionCommand(genesisFilePath string, transactionsFilePath strin
 	return add
 }
 
+func checkArgs(c AddTransactionCommand) (models.Account, models.Account, error) {
+	from, err := models.NewAccount(c.From)
+	if err != nil {
+		return from, "", fmt.Errorf("from variable is not a valid ethereum account")
+	}
+
+	to, err := models.NewAccount(c.To)
+	if err != nil {
+		return "", to, fmt.Errorf("to variable is not a valid ethereum account")
+	}
+
+	if c.Value <= 0 {
+		return from, to, fmt.Errorf("value needs to be a positive value")
+	}
+	return from, to, nil
+}
+
 func (c *AddTransactionCommand) Execute(args []string) error {
+	//check args
+	from, to, err := checkArgs(*c)
+	if err != nil {
+		return err
+	}
 	//create transaction object
-	tx := models.NewTransaction(models.NewAccount(c.From), models.NewAccount(c.To), c.Value, c.Reason)
+	tx := models.NewTransaction(from, to, c.Value, c.Reason)
 
 	//get the state
 	state, err := c.stateService.GetState()
