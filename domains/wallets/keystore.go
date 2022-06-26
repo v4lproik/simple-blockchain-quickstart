@@ -7,11 +7,17 @@ import (
 	"os"
 )
 
-type KeystoreService struct {
+//fine to leave eth object as we are not planning on implementing another keystore
+//only for test/muck purposes
+type KeystoreService interface {
+	NewKeystoreAccount(password string) (common.Address, error)
+}
+
+type EthKeystoreService struct {
 	keystore *keystore.KeyStore
 }
 
-func NewKeystore(keystoreDataDirPath string) (*KeystoreService, error) {
+func NewEthKeystore(keystoreDataDirPath string) (*EthKeystoreService, error) {
 	var path os.FileInfo
 	var err error
 	if path, err = os.Stat(keystoreDataDirPath); os.IsNotExist(err) {
@@ -27,12 +33,12 @@ func NewKeystore(keystoreDataDirPath string) (*KeystoreService, error) {
 		return nil, fmt.Errorf("cannot initiate a keystore with configuration: keystoreDataDirPath %v", keystoreDataDirPath)
 	}
 
-	return &KeystoreService{
+	return &EthKeystoreService{
 		keystore: ks,
 	}, nil
 }
 
-func (k KeystoreService) NewKeystoreAccount(password string) (common.Address, error) {
+func (k *EthKeystoreService) NewKeystoreAccount(password string) (common.Address, error) {
 	acc, err := k.keystore.NewAccount(password)
 	if err != nil {
 		return common.Address{}, err

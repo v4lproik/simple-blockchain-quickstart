@@ -7,37 +7,37 @@ import (
 	"net/http"
 )
 
-const CREATE_WALLET_ENDPOINT = "/"
-
 type WalletsEnv struct {
-	keystore     *KeystoreService
-	errorBuilder ErrorBuilder
+	Keystore     KeystoreService
+	ErrorBuilder ErrorBuilder
 }
 
+const CREATE_WALLET_ACC_ENDPOINT = "/"
+
 func WalletsRegister(router *gin.RouterGroup, env *WalletsEnv) {
-	router.PUT(CREATE_WALLET_ENDPOINT, env.CreateWallet)
+	router.PUT(CREATE_WALLET_ACC_ENDPOINT, env.CreateWallet)
 }
 
 type CreateWalletParams struct {
 	Password string `json:"password" binding:"required,password"`
 }
 
-func (env WalletsEnv) CreateWallet(c *gin.Context) {
+func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 	params := &CreateWalletParams{}
 	//check params
-	if err := ShouldBind(c, env.errorBuilder, "wallet cannot be created", params); err != nil {
+	if err := ShouldBind(c, env.ErrorBuilder, "wallet cannot be created", params); err != nil {
 		AbortWithError(c, *err)
 		return
 	}
 
-	acc, err := env.keystore.NewKeystoreAccount(params.Password)
+	acc, err := env.Keystore.NewKeystoreAccount(params.Password)
 	if err != nil {
 		log.S().Errorf("cannot generate a new wallet account %v", err)
-		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "cannot generate a new wallet account"))
+		AbortWithError(c, *env.ErrorBuilder.New(http.StatusInternalServerError, "cannot generate a new wallet account", err))
 		return
 	}
 
 	//render
-	c.JSON(http.StatusOK, gin.H{"balances": acc})
+	c.JSON(http.StatusCreated, gin.H{"wallet_account": acc})
 	return
 }

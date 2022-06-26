@@ -10,11 +10,16 @@ var (
 	EmptyGenesisFilePath = "../../databases/testdata/genesis_empty.json"
 	BlocksFilePath       = "../../databases/testdata/blocks_test.db"
 	EmptyBlocksFilePath  = "../../databases/testdata/blocks_empty.db"
+	KeystoreDirPath      = "../../databases/testdata/keystore/"
 
 	//functions that are used to verify whether a test is valid or not
 	StandardHttpValidationFunc = func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
 		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
 		asserts.Equal(wBodyE, wBodyA, "Response Content - "+testName)
+	}
+	RegexpHttpValidationFunc = func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
+		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
+		asserts.Regexp(wBodyE, wBodyA, "Response Content - "+testName)
 	}
 )
 

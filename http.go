@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
@@ -62,14 +63,20 @@ func runHttpServer() {
 
 //TODO: Enumerate which domains need to start at bootstrap
 func bindFunctionalDomains(r *gin.Engine) {
+	//initiate services that
 	fileStateService := services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(opts.GenesisFilePath, opts.TransactionsFilePath))
 	fileTransactionService := services.NewFileTransactionService()
-
-	healthz.RunDomain(r)
-	balances.RunDomain(r, fileStateService)
-	transactions.RunDomain(r, fileStateService, fileTransactionService)
-	err := wallets.RunDomain(r, opts.KeystoreDirPath)
+	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
 		log.Fatalf("cannot run wallet domain %v", err)
 	}
+
+	//run domains
+	healthz.RunDomain(r)
+	balances.RunDomain(r, fileStateService)
+	transactions.RunDomain(r, fileStateService, fileTransactionService)
+	wallets.RunDomain(r, &wallets.WalletsEnv{
+		Keystore:     keystoreService,
+		ErrorBuilder: domains.NewErrorBuilder(),
+	})
 }
