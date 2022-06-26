@@ -24,6 +24,8 @@ func getErrorMsg(fe validator.FieldError) string {
 		return "Should be greater than " + fe.Param()
 	case "enum":
 		return "The value cannot be submitted"
+	case "password":
+		return "The password doesn't comply with the policy (min 8 char with min 1 upper, 1 number and 1 symbol)"
 	}
 	return "Unknown error"
 }

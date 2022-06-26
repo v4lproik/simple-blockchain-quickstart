@@ -58,7 +58,7 @@ go build -o simple-blockchain-quickstart
 ```
 ## Testing
 ```
-make test
+make test -B
 ```
 ## TODO
  - Add genesis and transaction files integrity check before launching the app

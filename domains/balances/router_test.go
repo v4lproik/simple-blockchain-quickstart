@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	"github.com/v4lproik/simple-blockchain-quickstart/test"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -15,19 +16,12 @@ import (
 )
 
 var (
-	testBlockchainFileDatabaseConf = &TestBlockchainFileDatabaseConf{"../../databases/genesis.json", "../../databases/blocks.db", false, false}
-	serviceState                   services.StateService
-	standardHttpValidationFunc     = func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
-		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
-		asserts.Equal(wBodyE, wBodyA, "Response Content - "+testName)
-	}
+	testBlockchainFileDatabaseConf = test.NewTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath)
+	serviceState                   = services.NewFileStateService(testBlockchainFileDatabaseConf)
 )
 
 func setTestBlockchainFileDatabaseConf(genesisFilePath string, transactionFilePath string, isWrongGenesisFilePath bool, isWrongTransactionFilePath bool) {
-	testBlockchainFileDatabaseConf.genesisFilePath = genesisFilePath
-	testBlockchainFileDatabaseConf.transactionFilePath = transactionFilePath
-	testBlockchainFileDatabaseConf.isWrongGenesisFilePath = isWrongGenesisFilePath
-	testBlockchainFileDatabaseConf.isWrongTransactionFilePath = isWrongTransactionFilePath
+	testBlockchainFileDatabaseConf.SetTestBlockchainFileDatabaseConf(genesisFilePath, transactionFilePath, isWrongGenesisFilePath, isWrongTransactionFilePath)
 	serviceState = services.NewFileStateService(testBlockchainFileDatabaseConf)
 }
 
@@ -49,7 +43,7 @@ var ListBalancesDomainTests = []struct {
 	//---------------------   Test suit for balance endpoints   ---------------------
 	{
 		init: func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf("../../databases/genesis.json", "../../databases/blocks.db", false, false)
+			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, false, false)
 		},
 		url:          BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		method:       "POST",
@@ -82,20 +76,20 @@ var ListBalancesDomainTests = []struct {
 	},
 	{
 		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf("../../databases/genesis.json", "../../databases/blocks.db", false, true)
+			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, false, true)
 		},
 		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		"POST",
 		nil,
 		http.StatusInternalServerError,
 		`{"error":{"code":500,"status":"Internal Server Error","message":"","context":[]}}`,
-		standardHttpValidationFunc,
+		test.StandardHttpValidationFunc,
 		"request balances list with wrong genesis path should return code 500",
 		func(req *http.Request) {},
 	},
 	{
 		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf("../../databases/genesis.json", "../../databases/blocks.db", true, true)
+			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, true, true)
 
 		},
 		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
@@ -103,33 +97,33 @@ var ListBalancesDomainTests = []struct {
 		nil,
 		http.StatusInternalServerError,
 		`{"error":{"code":500,"status":"Internal Server Error","message":"","context":[]}}`,
-		standardHttpValidationFunc,
+		test.StandardHttpValidationFunc,
 		"request balances list with wrong transaction path should return code 500",
 		func(req *http.Request) {},
 	},
 	{
 		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf("../../databases/genesis.json", "../../databases/blocks_empty.db", true, true)
+			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, true, true)
 		},
 		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		"POST",
 		nil,
 		http.StatusInternalServerError,
 		`{"error":{"code":500,"status":"Internal Server Error","message":"","context":[]}}`,
-		standardHttpValidationFunc,
+		test.StandardHttpValidationFunc,
 		"request balances list with state to nil should return code 500",
 		func(req *http.Request) {},
 	},
 	{
 		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf("../../databases/genesis_empty.json", "../../databases/blocks_empty.db", false, false)
+			setTestBlockchainFileDatabaseConf(test.EmptyGenesisFilePath, test.EmptyBlocksFilePath, false, false)
 		},
 		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		"POST",
 		nil,
 		http.StatusNotFound,
 		`{"error":{"code":404,"status":"Not Found","message":"balances could not be found","context":[]}}`,
-		standardHttpValidationFunc,
+		test.StandardHttpValidationFunc,
 		"request balances list with wrong transaction path should return code 500",
 		func(req *http.Request) {},
 	},
@@ -164,28 +158,5 @@ func TestBalancesEnv_ListBalances(t *testing.T) {
 }
 
 func initServer(r *gin.Engine) {
-	serviceState = services.NewFileStateService(testBlockchainFileDatabaseConf)
 	RunDomain(r, serviceState)
-}
-
-//test models//
-type TestBlockchainFileDatabaseConf struct {
-	genesisFilePath            string
-	transactionFilePath        string
-	isWrongGenesisFilePath     bool
-	isWrongTransactionFilePath bool
-}
-
-func (f TestBlockchainFileDatabaseConf) GenesisFilePath() string {
-	if f.isWrongGenesisFilePath {
-		return f.genesisFilePath[:1]
-	}
-	return f.genesisFilePath
-}
-
-func (f TestBlockchainFileDatabaseConf) TransactionFilePath() string {
-	if f.isWrongTransactionFilePath {
-		return f.transactionFilePath[:1]
-	}
-	return f.transactionFilePath
 }

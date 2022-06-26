@@ -48,7 +48,7 @@ jobs:
             sudo chmod +x $CIRCLE_WORKING_DIRECTORY/deployment_script/test.sh
             make dep
             go mod tidy
-            make test
+            make test -B
 
       - save_cache:
           key: go-mod-cache-v2-{{ arch }}-{{ .Branch }}-{{ checksum "go.mod" }}

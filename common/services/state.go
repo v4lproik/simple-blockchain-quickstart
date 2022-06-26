@@ -14,8 +14,8 @@ type FileStateService struct {
 	fileDatabaseConf conf.FileDatabaseConf
 }
 
-func NewFileStateService(fileDatabaseConf conf.FileDatabaseConf) FileStateService {
-	return FileStateService{
+func NewFileStateService(fileDatabaseConf conf.FileDatabaseConf) *FileStateService {
+	return &FileStateService{
 		fileDatabaseConf,
 	}
 }
