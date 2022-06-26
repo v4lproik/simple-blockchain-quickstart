@@ -70,3 +70,17 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 swag init
 ```
+### Test data
+In the folder ./databases you can find some data that could be used to test the application.  
+```
+Username: v4lproik  
+Account: 0x7b65a12633dbe9a413b17db515732d69e684ebe2  
+Password: P@assword-to-access-keystore1
+Keystore: databases/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
+```
+```
+Username: cloudvenger  
+Account: 0x7b65a12633dbe9a413b17db515732d69e684ebe2  
+Password: P@assword-to-access-keystore2  
+Keystore: databases/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
+```
