@@ -55,6 +55,15 @@ jobs:
           paths:
             - "/home/circleci/.go_workspace/pkg/mod"
 
+      #run swagger
+      - run:
+          name: Run swagger & Upload output to Apiary
+          command: |
+            go install github.com/swaggo/swag/cmd/swag@latest
+            swag init
+            gem install apiaryio
+            apiary publish --api-name=simpleblockchainquickstart --path=docs/swagger.yaml
+
       - run:
           name: Upload cover report
           command: |

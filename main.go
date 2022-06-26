@@ -5,6 +5,15 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
 
+// @title Simple Blockchain Quickstart
+// @version 1.0
+// @description About
+//This is an experimental repository which aims at shipping a decent skeleton for anyone who wants to get into the blockchain world via the Golang programming language
+
+// @contact.name API Support
+// @contact.email rousseau.joel@gmail.com
+
+// @host localhost:8080
 func main() {
 	//parse cli arguments
 	parser := flags.NewParser(&opts, flags.IgnoreUnknown)

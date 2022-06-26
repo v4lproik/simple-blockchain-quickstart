@@ -18,3 +18,4 @@ simple-blockchain-quickstart
 /go.sum
 /.idea/.*
 coverage.txt
+docs/.*

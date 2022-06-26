@@ -1,4 +1,4 @@
-# Simple-blockchain-quickstart [![CircleCI](https://dl.circleci.com/status-badge/img/gh/v4lproik/simple-blockchain-quickstart/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/v4lproik/simple-blockchain-quickstart/tree/master) [![codecov](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart/branch/master/graph/badge.svg?token=LBUG7Y80Q9)](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart) [![Go Report Card](https://goreportcard.com/badge/github.com/v4lproik/simple-blockchain-quickstart)](https://goreportcard.com/report/github.com/v4lproik/simple-blockchain-quickstart)
+# Simple-blockchain-quickstart [![CircleCI](https://dl.circleci.com/status-badge/img/gh/v4lproik/simple-blockchain-quickstart/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/v4lproik/simple-blockchain-quickstart/tree/master) [![codecov](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart/branch/master/graph/badge.svg?token=LBUG7Y80Q9)](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart) [![Go Report Card](https://goreportcard.com/badge/github.com/v4lproik/simple-blockchain-quickstart)](https://goreportcard.com/report/github.com/v4lproik/simple-blockchain-quickstart) [![api doc](https://badges.aleen42.com/src/apiary.svg)](https://simpleblockchainquickstart.docs.apiary.io/)
 This is merely a skeleton that helps you quickly set up a simplified version of a blockchain app written in Golang.
 ## Getting started
 ### Install Golang & Useful packages
@@ -60,6 +60,16 @@ go build -o simple-blockchain-quickstart
 ```
 make test -B
 ```
+## Generate doc
+1. Install [swag](https://github.com/swaggo/swag)
+2. (Optional) Export the GOPATH set by goenv if you are using goenv
+```
+export PATH=$(go env GOPATH)/bin:$PATH
+```
+3. Run the swagger
+```
+swag init
+```
 ## TODO
  - Add genesis and transaction files integrity check before launching the app
  - Extend cli commands via grpc calls  
@@ -74,3 +84,4 @@ make test -B
  - Add a test seeder and remove the blocks_test.db and genesis_test.db
  - ~~Add better error message when parsing a JSON payload through BindJson~~
  - Add error encapsulation through the different layer in order to deliver better http error code
+ - ~~Add swagger~~
