@@ -1,4 +1,5 @@
 BINARY=simple-blockchain-quickstart
+HOT_RELOAD_BIN=air
 
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 TEST=deployment_script/test.sh
@@ -10,6 +11,9 @@ proto:
 
 server:
 	./${BINARY} -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -r
+
+server_hot_reload:
+	${HOT_RELOAD_BIN} -- -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -r
 
 dep:
 	go mod download

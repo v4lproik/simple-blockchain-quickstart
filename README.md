@@ -26,6 +26,15 @@ export SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS=""
 ```
 make build
 ```
+## Hot reload
+1. Install air
+```
+go install github.com/cosmtrek/air@latest
+```
+2. (Optional) Export the GOPATH set by goenv if you are using goenv
+```
+export PATH=$(go env GOPATH)/bin:$PATH
+```
 ### Run as client
 ```
 ./simple-blockchain-quickstart -g ./databases/genesis.json -d ./databases/blocks.db transaction list
