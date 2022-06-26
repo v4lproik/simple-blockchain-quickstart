@@ -11,7 +11,9 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
+	"log"
 	"time"
 )
 
@@ -66,4 +68,8 @@ func bindFunctionalDomains(r *gin.Engine) {
 	healthz.RunDomain(r)
 	balances.RunDomain(r, fileStateService)
 	transactions.RunDomain(r, fileStateService, fileTransactionService)
+	err := wallets.RunDomain(r, opts.KeystoreDirPath)
+	if err != nil {
+		log.Fatalf("cannot run wallet domain %v", err)
+	}
 }
