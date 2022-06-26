@@ -18,7 +18,7 @@ import (
 var (
 	keystoreService KeystoreService
 	walletsEnv      *WalletsEnv
-	faultyKeystore  = NewFaultyKeystore()
+	faultyKeystore  *FaultyKeystore
 )
 
 func setKeystoreService(f KeystoreService) {
@@ -110,6 +110,7 @@ func TestBalancesEnv_ListBalances(t *testing.T) {
 
 func initServer(r *gin.Engine) {
 	services.ValidatorService{}.AddValidators()
+	faultyKeystore = NewFaultyKeystore()
 	keystoreService, _ = NewEthKeystore(test.KeystoreDirPath)
 	walletsEnv = &WalletsEnv{
 		Keystore:     keystoreService,
