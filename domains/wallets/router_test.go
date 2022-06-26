@@ -45,7 +45,7 @@ var CreateWalletsDomainTests = []struct {
 		method:         "PUT",
 		bodyData:       func() ([]byte, error) { return json.Marshal(CreateWalletParams{Password: "P@assword123!"}) },
 		expectedCode:   http.StatusCreated,
-		jsonResponse:   `{"wallet_account":"0x[a-fA-F0-9]{40}"}`,
+		jsonResponse:   `{"wallet":{"account":"0x[a-fA-F0-9]{40}"}}`,
 		validationFunc: test.RegexpHttpValidationFunc,
 		msg:            "request creation wallet with accepted password should return wallet account",
 		after:          func(req *http.Request) {},
