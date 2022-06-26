@@ -19,3 +19,4 @@ simple-blockchain-quickstart
 /.idea/.*
 coverage.txt
 docs/.*
+.air.toml
