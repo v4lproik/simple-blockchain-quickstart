@@ -70,18 +70,3 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 swag init
 ```
-## TODO
- - Add genesis and transaction files integrity check before launching the app
- - Extend cli commands via grpc calls  
- - ~~Break common components into a common package~~
- - ~~Add tests~~
- - Create database flavour
- - ~~Add custom api errors~~
- - Add error mapping between the commands package error to api error (right now we assume they are all unknown error)
- - Add an env variable which enumerates the functional domains that need to start
- - Add a switch for public/private access through RBAC
- - Add the gas component
- - Add a test seeder and remove the blocks_test.db and genesis_test.db
- - ~~Add better error message when parsing a JSON payload through BindJson~~
- - Add error encapsulation through the different layer in order to deliver better http error code
- - ~~Add swagger~~
