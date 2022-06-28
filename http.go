@@ -9,6 +9,7 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/auth"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
@@ -68,13 +69,35 @@ func bindFunctionalDomains(r *gin.Engine) {
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
-		log.Fatalf("cannot run wallet domain %v", err)
+		log.Fatalf("cannot create keystore service %v", err)
+	}
+	jwtOpts := apiConf.Auth.Jwt
+	jwtService, err := services.NewJwtService(
+		services.NewVerifyingConf(
+			jwtOpts.Verifying.JkmsUrl,
+			jwtOpts.Verifying.JkmsRefreshCacheIntervalInMin,
+			jwtOpts.Verifying.JkmsRefreshCacheRateLimitInMin,
+			jwtOpts.Verifying.JkmsRefreshCacheTimeoutInSec,
+		),
+		services.NewSigningConf(
+			jwtOpts.Signing.Algo,
+			jwtOpts.Signing.Audience,
+			jwtOpts.Signing.Domain,
+			jwtOpts.Signing.ExpiresIn,
+			jwtOpts.Signing.Issuer,
+			jwtOpts.Signing.KeyPath,
+			jwtOpts.Signing.KeyId,
+		),
+	)
+	if err != nil {
+		log.Fatalf("cannot create jwt service %v", err)
 	}
 
 	//run domains
 	healthz.RunDomain(r)
 	balances.RunDomain(r, fileStateService)
 	transactions.RunDomain(r, fileStateService, fileTransactionService)
+	auth.RunDomain(r, jwtService, apiConf.Auth.IsJwksEndpointActivated)
 	wallets.RunDomain(r, &wallets.WalletsEnv{
 		Keystore:     keystoreService,
 		ErrorBuilder: domains.NewErrorBuilder(),

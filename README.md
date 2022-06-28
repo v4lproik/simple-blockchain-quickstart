@@ -22,6 +22,18 @@ export SBQ_SERVER_KEY_FILE=""
 export SBQ_SERVER_HTTP_CORS_ALLOWED_ORIGINS="http://localhost:8080"
 export SBQ_SERVER_HTTP_CORS_ALLOWED_METHODS="GET,POST"
 export SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS=""
+export SBQ_IS_JKMS_ACTIVATED="true";
+export SBQ_JWT_KEY_PATH="./database/private.pem";
+export SBQ_JWT_KEY_ID="sbq-auth-key-id";
+export SBQ_JWT_EXPIRES_IN_HOURS="24";
+export SBQ_JWT_DOMAIN="localhost";
+export SBQ_JWT_AUDIENCE="localhost:8080";
+export SBQ_JWT_ISSUER="sbq-local";
+export SBQ_JWT_ALGO="HS256";
+export SBQ_JWT_JKMS_URL="http://localhost:8080/api/auth/.well-known/jwks.json";
+export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
+export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
+export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
 ```
 ### Building  
 ```
