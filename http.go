@@ -6,19 +6,22 @@ import (
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/v4lproik/simple-blockchain-quickstart/common"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/middleware"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	"github.com/v4lproik/simple-blockchain-quickstart/domains"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/auth"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
-	"log"
+	"go.uber.org/zap"
 	"time"
 )
 
 var (
+	log     *zap.SugaredLogger
 	apiConf = utils.ApiConf{}
 )
 
@@ -63,20 +66,51 @@ func runHttpServer() {
 
 //TODO: Enumerate which domains need to start at bootstrap
 func bindFunctionalDomains(r *gin.Engine) {
-	//initiate services that
+	//initiate services
+	errorBuilder := common.NewErrorBuilder()
 	fileStateService := services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(opts.GenesisFilePath, opts.TransactionsFilePath))
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
-		log.Fatalf("cannot run wallet domain %v", err)
+		log.Fatalf("cannot create keystore service %v", err)
 	}
+	jwtOpts := apiConf.Auth.Jwt
+	jwtService, err := services.NewJwtService(
+		services.NewVerifyingConf(
+			jwtOpts.Verifying.JkmsUrl,
+			jwtOpts.Verifying.JkmsRefreshCacheIntervalInMin,
+			jwtOpts.Verifying.JkmsRefreshCacheRateLimitInMin,
+			jwtOpts.Verifying.JkmsRefreshCacheTimeoutInSec,
+		),
+		services.NewSigningConf(
+			jwtOpts.Signing.Algo,
+			jwtOpts.Signing.Audience,
+			jwtOpts.Signing.Domain,
+			jwtOpts.Signing.ExpiresIn,
+			jwtOpts.Signing.Issuer,
+			jwtOpts.Signing.KeyPath,
+			jwtOpts.Signing.KeyId,
+		),
+	)
+	if err != nil {
+		log.Fatalf("cannot create jwt service %v", err)
+	}
+	passwordService := services.NewDefaultPasswordService()
+	userService, err := services.NewUserService(opts.UsersFilePath)
+	if err != nil {
+		log.Fatalf("cannot create user service %v", err)
+	}
+	//initiate middlewares
+	auto401 := apiConf.Auth.IsAuthenticationActivated
+	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
 
 	//run domains
 	healthz.RunDomain(r)
-	balances.RunDomain(r, fileStateService)
-	transactions.RunDomain(r, fileStateService, fileTransactionService)
+	balances.RunDomain(r, fileStateService, authMiddleware)
+	transactions.RunDomain(r, fileStateService, fileTransactionService, authMiddleware)
+	auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
 	wallets.RunDomain(r, &wallets.WalletsEnv{
 		Keystore:     keystoreService,
-		ErrorBuilder: domains.NewErrorBuilder(),
-	})
+		ErrorBuilder: errorBuilder,
+	}, authMiddleware)
 }

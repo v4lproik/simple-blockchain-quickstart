@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
 )
 
 var opts struct {
 	RunAsHttpserver      bool   `short:"r" long:"run_as_http_server" description:"Run the application as an http server" required:"false"`
+	UsersFilePath        string `short:"u" long:"users_file_path" description:"Users file path" required:"true"`
 	GenesisFilePath      string `short:"g" long:"genesis_file_path" description:"Genesis file path" required:"true"`
 	TransactionsFilePath string `short:"d" long:"transactions_file_path" description:"Transactions file path" required:"true"`
 	KeystoreDirPath      string `short:"k" long:"keystore_dir_path" description:"Keystore dir path" required:"true"`
@@ -16,6 +18,7 @@ var opts struct {
 func displayAppConfiguration() {
 	logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
 	logger.Infof("Genesis file: %s", opts.GenesisFilePath)
+	logger.Infof("Users file: %s", opts.UsersFilePath)
 	logger.Infof("Keystore dir: %s", opts.KeystoreDirPath)
 	if opts.LogFilePath != "" {
 		logger.Infof("Output in log file: %s", opts.LogFilePath)
@@ -26,7 +29,17 @@ func displayAppConfiguration() {
 
 //general commands
 func addCommands(parser *flags.Parser) error {
-	return addTransactionCommands(parser)
+	err := addTransactionCommands(parser)
+	if err != nil {
+		return fmt.Errorf("cannot add transaction commands %v", err)
+	}
+
+	err = addPasswordCommands(parser)
+	if err != nil {
+		return fmt.Errorf("cannot add password commands %v", err)
+	}
+
+	return nil
 }
 
 //transaction
@@ -38,6 +51,24 @@ func addTransactionCommands(parser *flags.Parser) error {
 		&commands.TransactionCommands{
 			Add:  *commands.NewAddTransactionCommand(opts.GenesisFilePath, opts.TransactionsFilePath),
 			List: *commands.NewListTransactionCommand(opts.GenesisFilePath, opts.TransactionsFilePath),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//password
+func addPasswordCommands(parser *flags.Parser) error {
+	_, err := parser.AddCommand(
+		"password",
+		"password utility commands including: hash",
+		"Utilities developed to ease the operations and debugging of password.",
+		&commands.PasswordCommands{
+			Hash:    *commands.NewHashAPasswordCommand(),
+			Compare: *commands.NewCompareHashCommand(),
 		},
 	)
 	if err != nil {

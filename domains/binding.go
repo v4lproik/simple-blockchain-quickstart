@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"net/http"
 )
 
@@ -32,7 +33,7 @@ func getErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func ShouldBind(c *gin.Context, errorBuilder ErrorBuilder, errMsg string, params interface{}) *Error {
+func ShouldBind(c *gin.Context, errorBuilder common.ErrorBuilder, errMsg string, params interface{}) *common.Error {
 	if err := c.ShouldBind(params); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {

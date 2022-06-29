@@ -22,6 +22,19 @@ export SBQ_SERVER_KEY_FILE=""
 export SBQ_SERVER_HTTP_CORS_ALLOWED_ORIGINS="http://localhost:8080"
 export SBQ_SERVER_HTTP_CORS_ALLOWED_METHODS="GET,POST"
 export SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS=""
+export SBQ_IS_AUTHENTICATION_ACTIVATED="true";
+export SBQ_IS_JKMS_ACTIVATED="true";
+export SBQ_JWT_KEY_PATH="./database/private.pem";
+export SBQ_JWT_KEY_ID="sbq-auth-key-id";
+export SBQ_JWT_EXPIRES_IN_HOURS="24";
+export SBQ_JWT_DOMAIN="localhost";
+export SBQ_JWT_AUDIENCE="localhost:8080";
+export SBQ_JWT_ISSUER="sbq-local";
+export SBQ_JWT_ALGO="HS256";
+export SBQ_JWT_JKMS_URL="http://localhost:8080/api/auth/.well-known/jwks.json";
+export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
+export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
+export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
 ```
 ### Building  
 ```
@@ -80,17 +93,53 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 swag init
 ```
+## Authentication
+JWK authentication is optional, you can activate a verification for each endpoint if necessary. You need to activate it through the environment variable.
+```
+export SBQ_IS_AUTHENTICATION_ACTIVATED="true";
+export SBQ_JWT_KEY_PATH="./database/private.pem";
+export SBQ_JWT_KEY_ID="sbq-auth-key-id";
+export SBQ_JWT_EXPIRES_IN_HOURS="24";
+export SBQ_JWT_DOMAIN="localhost";
+export SBQ_JWT_AUDIENCE="localhost:8080";
+export SBQ_JWT_ISSUER="sbq-local";
+export SBQ_JWT_ALGO="HS256";
+```
+JWT tokens are being signed with the private key passed as an environment variable. Also, you need to provide the url containing the JKMS derived from the private key.
+You can use this project JKMS service exposing the public key parameters needed to verify a JWT token.
+```
+export SBQ_IS_JKMS_ACTIVATED="true";
+export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
+export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
+export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
+```
+The users are declared in ```./databases/users.toml```. See the Test data section for the test accounts.
+```
+curl localhost:8080/api/balances/ -X POST                                                                                                                          15:03:11
+{"error":{"code":401,"status":"Unauthorized","message":"authentication token cannot be found","context":[]}}
+
+> curl localhost:8080/api/auth/login -X POST -d '{"username": "v4lproik", "password":"P@assword-to-access-api1"}' -H 'Content-type: application/json'
+{"access_token":"eyJhbGciOiJSUzI1NiIsImtpZCI6InNicS1hdXRoLWtleS1pZCIsInR5cCI6IkpXVCJ9.eyJkYXQiOnsiTmFtZSI6InY0bHByb2lrIiwiSGFzaCI6IiRhcmdvbjJpZCR2PTE5JG09NjU1MzYsdD0zLHA9MiRGdVNVWlEwbXJUTTl1SXBQOHFwTlV3JG5kMjFqdGdVWmpKanowNzhqZGxTREt4cWFqdjVwYWl4bG9HR05nVE1KSXcifSwiZXhwIjoxNjU2NTk0MDE1LCJpYXQiOjE2NTY1MDc2MTUsIm5iZiI6MTY1NjUwNzYxNX0.4VBqD9Cg2KH96CioyRtSIlM2edGneXxZLrxG46Qub4Pol-NWOXI9_PAmIL_DmQEvF95x44m9Vl8VF2RZdO42B03cxKZPKIzjZjalHqyEl3YPyz27kP7d_YCCMjSzKMbx8Np7u9orWjlC5MayCB2rtgefag3DkKGJWUAIH5OfDPy6B-XLsgL8caWN0aM4TCelC-geo2bC488Xk79YffhfNLJPuvgKuuUeWaWLz-YHcALbguqRP_ehqDvn5vzBBWAS_aCYN3W9-dsOHttfSRKaxmxQm-hxcp01T7ezXgNO3gnJmfuWff-96UKZVb0QPzG1ltPWInqheKRypviuAEIHUg"}
+
+> curl localhost:8080/api/balances/ -X POST -H "X-API-TOKEN: eyJhbGciOiJSUzI1NiIsImtpZCI6InNicS1hdXRoLWtleS1pZCIsInR5cCI6IkpXVCJ9.eyJkYXQiOnsiTmFtZSI6InY0bHByb2lrIiwiSGFzaCI6IiRhcmdvbjJpZCR2PTE5JG09NjU1MzYsdD0zLHA9MiRGdVNVWlEwbXJUTTl1SXBQOHFwTlV3JG5kMjFqdGdVWmpKanowNzhqZGxTREt4cWFqdjVwYWl4bG9HR05nVE1KSXcifSwiZXhwIjoxNjU2NTk0MDE1LCJpYXQiOjE2NTY1MDc2MTUsIm5iZiI6MTY1NjUwNzYxNX0.4VBqD9Cg2KH96CioyRtSIlM2edGneXxZLrxG46Qub4Pol-NWOXI9_PAmIL_DmQEvF95x44m9Vl8VF2RZdO42B03cxKZPKIzjZjalHqyEl3YPyz27kP7d_YCCMjSzKMbx8Np7u9orWjlC5MayCB2rtgefag3DkKGJWUAIH5OfDPy6B-XLsgL8caWN0aM4TCelC-geo2bC488Xk79YffhfNLJPuvgKuuUeWaWLz-YHcALbguqRP_ehqDvn5vzBBWAS_aCYN3W9-dsOHttfSRKaxmxQm-hxcp01T7ezXgNO3gnJmfuWff-96UKZVb0QPzG1ltPWInqheKRypviuAEIHUg"
+{"balances":[{"account":"0x7b65a12633dbe9a413b17db515732d69e684ebe2","value":998000},{"account":"0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf","value":1003000}]}
+```
 ### Test data
 In the folder ./databases you can find some data that could be used to test the application.  
 ```
-Username: v4lproik  
-Account: 0x7b65a12633dbe9a413b17db515732d69e684ebe2  
+Username: v4lproik
+Password: P@assword-to-access-api1
+Hash    : $argon2id$v=19$m=65536,t=3,p=2$FuSUZQ0mrTM9uIpP8qpNUw$nd21jtgUZjJjz078jdlSDKxqajv5paixloGGNgTMJIw
+
+Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore1
 Keystore: databases/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
 ```
 ```
-Username: cloudvenger  
-Account: 0x7b65a12633dbe9a413b17db515732d69e684ebe2  
-Password: P@assword-to-access-keystore2  
+Username: cloudvenger
+Password: P@assword-to-access-api2
+Hash    : $argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQSjURBS6PFttzlksmozz8kuGBCqk
+Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
+Password: P@assword-to-access-keystore2
 Keystore: databases/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
 ```
