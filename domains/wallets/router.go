@@ -2,6 +2,7 @@ package wallets
 
 import (
 	"github.com/gin-gonic/gin"
+	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
 	log "go.uber.org/zap"
 	"net/http"

@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
@@ -102,12 +103,19 @@ func NewJwtService(verifyingConf VerifyingConf, signingConf SigningConf) (*JwtSe
 	}, nil
 }
 
+// SignToken Sign token with private key passed at the initialisation of the service
+// including the payload passed as content parameter
 func (j *JwtService) SignToken(content interface{}) (string, error) {
 	signingConf := j.signingConf
 	now := time.Now().UTC()
 
+	payload, err := json.Marshal(content)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling content %v", err)
+	}
+
 	claims := make(jwt.MapClaims)
-	claims["dat"] = content                                                               // Our custom data.
+	claims["dat"] = string(payload)                                                       // Our custom data.
 	claims["exp"] = now.Add(time.Hour * time.Duration(signingConf.expiresInHours)).Unix() // The expiration time after which the token must be disregarded.
 	claims["iat"] = now.Unix()                                                            // The time at which the token was issued.
 	claims["nbf"] = now.Unix()                                                            // The time before which the token must be disregarded.
@@ -129,19 +137,21 @@ func (j *JwtService) SignToken(content interface{}) (string, error) {
 	return signedToken, nil
 }
 
+// VerifyToken check if token is valid according to public key info expsed by jwks
 func (j *JwtService) VerifyToken(signedToken string) (jwt.Token, error) {
 	//lazy initialisation singleton
 	//very useful in the case of the client needs to be initiated after the endpoint is exposed
 	if j.jwksClient == nil {
 		err := j.getJwksClient()
 		if err != nil {
-			return jwt.Token{}, fmt.Errorf("error verifying the jwt token %v", err)
+			return jwt.Token{}, fmt.Errorf("getting jkms %v", err)
 		}
 	}
 
+	//parse token and validate it (eg is expired?)
 	token, err := jwt.Parse(signedToken, j.jwksClient.Keyfunc)
 	if err != nil {
-		return jwt.Token{}, fmt.Errorf("error verifying the jwt token %v", err)
+		return jwt.Token{}, fmt.Errorf("parsing error %v", err)
 	}
 	return *token, nil
 }
@@ -154,6 +164,7 @@ func (j *JwtService) PrivateKeyId() string {
 	return j.signingConf.privateKeyId
 }
 
+//initiate jwks client
 func (j *JwtService) getJwksClient() error {
 	var err error
 	// initiate the jwks client

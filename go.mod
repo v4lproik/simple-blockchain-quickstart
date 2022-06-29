@@ -12,10 +12,12 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/pelletier/go-toml v1.9.5
 	github.com/stretchr/testify v1.7.2
 	github.com/thoas/go-funk v0.9.2
 	github.com/v4lproik/gin-jwks-rsa v0.0.0-20220627183516-df56559b0792
 	go.uber.org/zap v1.21.0
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 )
 
 require (
@@ -47,7 +49,6 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/text v0.3.7 // indirect

@@ -17,8 +17,9 @@ type ApiConf struct {
 		}
 	}
 	Auth struct {
-		IsJwksEndpointActivated bool `env:"SBQ_IS_JKMS_ACTIVATED,required"`
-		Jwt                     struct {
+		IsAuthenticationActivated bool `env:"SBQ_IS_AUTHENTICATION_ACTIVATED,required"`
+		IsJwksEndpointActivated   bool `env:"SBQ_IS_JKMS_ACTIVATED,required"`
+		Jwt                       struct {
 			Signing struct {
 				KeyPath   string `env:"SBQ_JWT_KEY_PATH,required"`
 				KeyId     string `env:"SBQ_JWT_KEY_ID,required"`
