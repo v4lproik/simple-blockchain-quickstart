@@ -51,19 +51,22 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 ### Run as client
 ```
-./simple-blockchain-quickstart -g ./databases/genesis.json -d ./databases/blocks.db transaction list
+make build && ./simple-blockchain-quickstart -d ./databases/blocks.db -g ./databases/genesis.json -k ./databases/keystore/ -u ./databases/users.toml transaction list
 go build -o simple-blockchain-quickstart
-1.65573513630384e+09    info    Transactions file: ./databases/blocks.db
-1.6557351363038728e+09  info    Genesis file: ./databases/genesis.json
-1.6557351363038917e+09  info    Output: console
-1.6557351363070958e+09  info    #####################
-1.6557351363071187e+09  info    # Accounts balances #
-1.6557351363071227e+09  info    #####################
-1.6557351363071418e+09  info    State: 87977917793e5fb015311393023ee3ebad19accd1a1c8d7907d58cb686c5ac0a
-1.655735136307148e+09   info    ---------------------
-1.6557351363071659e+09  info    0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf: 1003000
-1.6557351363071706e+09  info    0x7b65a12633dbe9a413b17db515732d69e684ebe2: 998000
-1.6557351363071866e+09  info    ---------------------
+1.656521937350836e+09	info	Transactions file: ./databases/blocks.db
+1.656521937350888e+09	info	Genesis file: ./databases/genesis.json
+1.656521937350891e+09	info	Users file: ./databases/users.toml
+1.656521937350893e+09	info	Keystore dir: ./databases/keystore/
+1.6565219373508952e+09	info	Output: console
+1.6565219373573241e+09	info	#####################
+1.6565219373573499e+09	info	# Accounts balances #
+1.656521937357353e+09	info	#####################
+1.656521937357364e+09	info	State: a03d8c9088049b01b25d468919f827a393772f4bcecaf8795f454338c75b6bb2
+1.656521937357368e+09	info	Height: 8
+1.6565219373573701e+09	info	---------------------
+1.656521937357375e+09	info	0x7b65a12633dbe9a413b17db515732d69e684ebe2: 998000
+1.656521937357379e+09	info	0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf: 1003000
+1.6565219373573818e+09	info	---------------------
 ```
 ### Run as node
 ```
@@ -139,6 +142,7 @@ Keystore: databases/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9
 Username: cloudvenger
 Password: P@assword-to-access-api2
 Hash    : $argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQSjURBS6PFttzlksmozz8kuGBCqk
+
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore2
 Keystore: databases/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf

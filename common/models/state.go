@@ -24,6 +24,7 @@ type FromFileState struct {
 	transactionsPool []Transaction
 	dbFile           *os.File
 	latestBlockHash  Hash
+	latestBlock      Block
 }
 
 type GenesisFile struct {
@@ -62,7 +63,7 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State
 	}
 
 	scanner := bufio.NewScanner(f)
-	state := &FromFileState{balances, make([]Transaction, 0), f, Hash{}}
+	state := &FromFileState{balances, make([]Transaction, 0), f, Hash{}, Block{}}
 
 	//for each block found in database
 	for scanner.Scan() {
@@ -82,8 +83,9 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State
 			return nil, err
 		}
 
-		//the hash reflecting the state is now the latest block being added to the database
+		//keep a copy of latest block and its hash so it can be exposed to the network
 		state.latestBlockHash = blockDB.Key
+		state.latestBlock = blockDB.Value
 	}
 	return state, nil
 }
@@ -106,6 +108,7 @@ func (s *FromFileState) Persist() (Hash, error) {
 	//create a new Block only with the new transactions
 	block := NewBlock(
 		s.latestBlockHash,
+		s.latestBlock.Header.Height+1,
 		uint64(time.Now().Unix()),
 		s.transactionsPool,
 	)
@@ -173,11 +176,16 @@ func (s *FromFileState) GetLatestBlockHash() Hash {
 	return s.latestBlockHash
 }
 
+func (s *FromFileState) GetLatestBlockHeight() uint64 {
+	return s.latestBlock.Header.Height
+}
+
 func (s *FromFileState) Print() {
 	log.S().Infof("#####################")
 	log.S().Infof("# Accounts balances #")
 	log.S().Infof("#####################")
 	log.S().Infof("State: %x", s.GetLatestBlockHash())
+	log.S().Infof("Height: %x", s.GetLatestBlockHeight())
 	log.S().Infof("---------------------")
 	for account, balance := range s.balances {
 		log.S().Infof("%s: %d", account, balance)
