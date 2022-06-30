@@ -10,14 +10,17 @@ import (
 	"time"
 )
 
-type State interface {
-	Add(tx Transaction) error
-	Balances() map[Account]uint
-	Persist() (Hash, error)
-	Close() error
-	GetLatestBlockHash() Hash
-	Print()
-}
+type (
+	State interface {
+		Add(tx Transaction) error
+		Balances() map[Account]uint
+		Persist() (Hash, error)
+		Close() error
+		GetLatestBlockHash() Hash
+		GetLatestBlockHeight() uint64
+		Print()
+	}
+)
 
 type FromFileState struct {
 	balances         map[Account]uint
