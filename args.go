@@ -11,6 +11,7 @@ var opts struct {
 	UsersFilePath        string `short:"u" long:"users_file_path" description:"Users file path" required:"true"`
 	GenesisFilePath      string `short:"g" long:"genesis_file_path" description:"Genesis file path" required:"true"`
 	TransactionsFilePath string `short:"d" long:"transactions_file_path" description:"Transactions file path" required:"true"`
+	NodesFilePath        string `short:"n" long:"nodes_file_path" description:"Nodes file path" required:"true"`
 	KeystoreDirPath      string `short:"k" long:"keystore_dir_path" description:"Keystore dir path" required:"true"`
 	LogFilePath          string `short:"l" long:"log_file_path" description:"Where application logs will be written. If this value is not specified, the logs will be displayed to the console." required:"false"`
 }
@@ -19,6 +20,7 @@ func displayAppConfiguration() {
 	logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
 	logger.Infof("Genesis file: %s", opts.GenesisFilePath)
 	logger.Infof("Users file: %s", opts.UsersFilePath)
+	logger.Infof("Nodes file: %s", opts.NodesFilePath)
 	logger.Infof("Keystore dir: %s", opts.KeystoreDirPath)
 	if opts.LogFilePath != "" {
 		logger.Infof("Output in log file: %s", opts.LogFilePath)

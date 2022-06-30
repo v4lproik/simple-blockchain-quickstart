@@ -13,10 +13,11 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/auth"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/healthz"
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/nodes"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
-	"go.uber.org/zap"
+	log "go.uber.org/zap"
 	"time"
 )
 
@@ -25,14 +26,13 @@ type Domain string
 const (
 	AUTH         Domain = "AUTH"
 	BALANCES            = "BALANCES"
-	HEALTHZ             = "HEALTZ"
+	HEALTHZ             = "HEALTHZ"
 	NODES               = "NODES"
 	TRANSACTIONS        = "TRANSACTIONS"
 	WALLETS             = "WALLETS"
 )
 
 var (
-	log     *zap.SugaredLogger
 	apiConf = utils.ApiConf{}
 )
 
@@ -82,7 +82,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
-		log.Fatalf("cannot create keystore service %v", err)
+		log.S().Fatalf("cannot create keystore service %v", err)
 	}
 	jwtOpts := apiConf.Auth.Jwt
 	jwtService, err := services.NewJwtService(
@@ -103,13 +103,19 @@ func bindFunctionalDomains(r *gin.Engine) {
 		),
 	)
 	if err != nil {
-		log.Fatalf("cannot create jwt service %v", err)
+		log.S().Fatalf("cannot create jwt service %v", err)
 	}
 	passwordService := services.NewDefaultPasswordService()
 	userService, err := services.NewUserService(opts.UsersFilePath)
 	if err != nil {
-		log.Fatalf("cannot create user service %v", err)
+		log.S().Fatalf("cannot create user service %v", err)
 	}
+
+	nodeService, err := nodes.NewNodeService(opts.NodesFilePath)
+	if err != nil {
+		log.S().Fatalf("cannot create node service %v", err)
+	}
+
 	//initiate middlewares
 	auto401 := apiConf.Auth.IsAuthenticationActivated
 	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
@@ -123,6 +129,8 @@ func bindFunctionalDomains(r *gin.Engine) {
 			balances.RunDomain(r, fileStateService, authMiddleware)
 		case HEALTHZ:
 			healthz.RunDomain(r)
+		case NODES:
+			nodes.RunDomain(r, nodeService, fileStateService)
 		case TRANSACTIONS:
 			transactions.RunDomain(r, fileStateService, fileTransactionService, authMiddleware)
 		case WALLETS:
@@ -131,7 +139,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 				ErrorBuilder: errorBuilder,
 			}, authMiddleware)
 		default:
-			log.Fatalf("the domain %s is unknown", domain)
+			log.S().Fatalf("the domain %s is unknown", domain)
 		}
 	}
 
