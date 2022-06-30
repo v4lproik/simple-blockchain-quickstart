@@ -20,6 +20,17 @@ import (
 	"time"
 )
 
+type Domain string
+
+const (
+	AUTH         Domain = "AUTH"
+	BALANCES            = "BALANCES"
+	HEALTHZ             = "HEALTZ"
+	NODES               = "NODES"
+	TRANSACTIONS        = "TRANSACTIONS"
+	WALLETS             = "WALLETS"
+)
+
 var (
 	log     *zap.SugaredLogger
 	apiConf = utils.ApiConf{}
@@ -64,7 +75,6 @@ func runHttpServer() {
 	}
 }
 
-//TODO: Enumerate which domains need to start at bootstrap
 func bindFunctionalDomains(r *gin.Engine) {
 	//initiate services
 	errorBuilder := common.NewErrorBuilder()
@@ -105,12 +115,24 @@ func bindFunctionalDomains(r *gin.Engine) {
 	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
 
 	//run domains
-	healthz.RunDomain(r)
-	balances.RunDomain(r, fileStateService, authMiddleware)
-	transactions.RunDomain(r, fileStateService, fileTransactionService, authMiddleware)
-	auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
-	wallets.RunDomain(r, &wallets.WalletsEnv{
-		Keystore:     keystoreService,
-		ErrorBuilder: errorBuilder,
-	}, authMiddleware)
+	for _, domain := range apiConf.Domains.ToStart {
+		switch Domain(domain) {
+		case AUTH:
+			auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
+		case BALANCES:
+			balances.RunDomain(r, fileStateService, authMiddleware)
+		case HEALTHZ:
+			healthz.RunDomain(r)
+		case TRANSACTIONS:
+			transactions.RunDomain(r, fileStateService, fileTransactionService, authMiddleware)
+		case WALLETS:
+			wallets.RunDomain(r, &wallets.WalletsEnv{
+				Keystore:     keystoreService,
+				ErrorBuilder: errorBuilder,
+			}, authMiddleware)
+		default:
+			log.Fatalf("the domain %s is unknown", domain)
+		}
+	}
+
 }

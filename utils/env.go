@@ -16,6 +16,9 @@ type ApiConf struct {
 			AllowedHeaders []string `env:"SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS,required" envSeparator:","`
 		}
 	}
+	Domains struct {
+		ToStart []string `env:"SBQ_DOMAINS_TO_START,required" envSeparator:","`
+	}
 	Auth struct {
 		IsAuthenticationActivated bool `env:"SBQ_IS_AUTHENTICATION_ACTIVATED,required"`
 		IsJwksEndpointActivated   bool `env:"SBQ_IS_JKMS_ACTIVATED,required"`
