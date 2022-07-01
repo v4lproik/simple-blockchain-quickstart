@@ -85,6 +85,7 @@ go build -o simple-blockchain-quickstart
 ```
 ## Testing
 ```
+chmod +x ./deployment_script/test.sh
 make test -B
 ```
 ## Generate doc
