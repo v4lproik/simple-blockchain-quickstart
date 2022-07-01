@@ -4,29 +4,32 @@ HOT_RELOAD_BIN=air
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 TEST=deployment_script/test.sh
 
+#useful in dockerfile
+print-%  : ; @echo $* = $($*)
+
 default: build
 
 proto:
 	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative proto/*.proto
 
 server:
-	./${BINARY} -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -u ./databases/users.toml -n ./databases/network_nodes.toml -r
+	./bin/${BINARY} -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -u ./databases/users.toml -n ./databases/network_nodes.toml -r
 
 server_hot_reload:
-	${HOT_RELOAD_BIN} -- -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -u ./databases/users.toml -n ./databases/network_nodes.toml -r
+	./bin/${HOT_RELOAD_BIN} -- -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -u ./databases/users.toml -n ./databases/network_nodes.toml -r
 
 dep:
 	go mod download
 
 build:
-	go build -o ${BINARY}
+	go build -o ./bin/${BINARY}
 
 run:
-	./${BINARY}
+	./bin/${BINARY}
 
 clean:
 	go clean -i -v -r
-	rm ${BINARY}
+	rm ./bin/${BINARY}
 
 test:
 	@if [ -f ${TEST} ] ; then ./${TEST} ; fi

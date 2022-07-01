@@ -1,0 +1,7 @@
+.air.toml
+.gitignore
+test
+deployment_script
+databases/testdata
+.circleci
+.github
