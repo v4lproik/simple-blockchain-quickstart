@@ -5,6 +5,9 @@ jobs:
     machine: true
     working_directory: /home/circleci/.go_workspace/src/github.com/v4lproik/simple-blockchain-quickstart
     environment:
+      #project variables
+      IMAGE_NAME: "v4lproik/simple-blockchain-quickstart"
+
       #container variables
       GOPATH: "/home/circleci/.go_workspace"
       GODIST: "go1.18.3.linux-amd64.tar.gz"
@@ -68,3 +71,12 @@ jobs:
           name: Upload cover report
           command: |
             bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+
+      - run:
+          name: Deploy Master to Docker Hub
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+              docker build -t $IMAGE_NAME .
+              docker push $IMAGE_NAME:latest
+            fi
