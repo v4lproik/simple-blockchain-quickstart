@@ -2,30 +2,70 @@ package services
 
 import (
 	"fmt"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"io/ioutil"
 )
 
 type UserService struct {
-	userDb *toml.Tree
+	userDatabasePath string
 }
 
-func NewUserService(userDatabasePath string) (*UserService, error) {
-	file, err := toml.LoadFile(userDatabasePath)
-	if err != nil {
-		return nil, fmt.Errorf("cannot load toml file %v", err)
+// Name toml specific struct
+type Name string
+type UserFromDB struct {
+	Nodes map[Name]struct {
+		Hash string
 	}
-	return &UserService{userDb: file}, nil
+}
+
+// NewUserService initiate the user service
+func NewUserService(userDatabasePath string) (*UserService, error) {
+	service := &UserService{userDatabasePath: userDatabasePath}
+	//check if the file can be opened and list the nodes
+	if _, err := service.List(); err != nil {
+		return nil, nil
+	}
+	return service, nil
 }
 
 // Get user if found, nil otherwise
 func (u *UserService) Get(userName string) (*models.User, error) {
-	p := u.userDb.Get(fmt.Sprintf("Users.%s", userName)).(*toml.Tree)
-	if p == nil {
-		return nil, fmt.Errorf("user %s cannot be found", userName)
+	//toml v2 has removed the querying language
+	//small file at the moment so this works atm - this should be addressed at some point cf. kanban board
+	users, err := u.List()
+	if err != nil {
+		return nil, err
 	}
-	return &models.User{
-		Name: userName,
-		Hash: p.Get("password").(string),
-	}, nil
+
+	if val, ok := users[Name(userName)]; ok {
+		return &val, nil
+	}
+
+	return nil, nil
+}
+
+// List all users, empty array otherwise
+func (u *UserService) List() (map[Name]models.User, error) {
+	file, err := ioutil.ReadFile(u.userDatabasePath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot load toml file %v", err)
+	}
+
+	var usersFromDb UserFromDB
+	err = toml.Unmarshal(file, &usersFromDb)
+	if err != nil {
+		return nil, fmt.Errorf("users couldn't be retrieved %v", err)
+	}
+
+	usersNb := len(usersFromDb.Nodes)
+	users := make(map[Name]models.User, usersNb)
+	i := 0
+	for name, userProperties := range usersFromDb.Nodes {
+		users[name] = models.User{
+			Hash: userProperties.Hash,
+		}
+		i++
+	}
+	return users, nil
 }
