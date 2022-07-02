@@ -4,12 +4,12 @@ services:
     env_file:
       - ./config/local.env
     environment:
-      - cmd=-r
+      - cmd=${cmd}
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - databases:/databases
+      - databases:/app/bin/databases
 
 volumes:
   databases:

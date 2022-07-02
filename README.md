@@ -85,10 +85,15 @@ go build -o simple-blockchain-quickstart
 [GIN-debug] Listening and serving HTTP on 127.0.0.1:8080
 ```
 ### Run in container
+The docker image has been built so the mandatory options are passed in an env file. The extra options are passed through the variable ```cmd```.
+To sum up ```cmd``` is responsible for switching from running the app as a client or as a node. The options related to the app itself are stored in ```config/<env>.conf```.
 ```
 #first remove all images locally if you rebuild from this folder
 docker-compose down --rmi all
-docker compose --env-file ./config/local.env up
+#eg. run as a node for fish shell users
+set -l cmd -r; docker-compose -f docker-compose-local.yml up
+#eg. run as cli for bash users
+cmd="transaction list" docker-compose -f docker-compose-local.yml up
 ```
 ## Testing
 ```
