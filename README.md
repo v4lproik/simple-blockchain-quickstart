@@ -13,6 +13,7 @@ make dep
 ```
 ### Set env variables  
 ```
+cat config/local.env
 export SBQ_ENV="local"
 export SBQ_SERVER_ADDRESS="localhost"
 export SBQ_SERVER_PORT="8080"
@@ -82,6 +83,12 @@ go build -o simple-blockchain-quickstart
 [GIN-debug] GET    /api/healthz              --> github.com/v4lproik/simple-blockchain-quickstart/domains/healthz.RunDomain.func1 (5 handlers)
 1.6558218035261767e+09  info    start server without tls
 [GIN-debug] Listening and serving HTTP on 127.0.0.1:8080
+```
+### Run in container
+```
+#first remove all images locally if you rebuild from this folder
+docker-compose down --rmi all
+docker compose --env-file ./config/local.env up
 ```
 ## Testing
 ```

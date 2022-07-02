@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  node:
+    env_file:
+      - ./config/local.env
+    environment:
+      - cmd=-r
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - databases:/databases
+
+volumes:
+  databases:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./databases
