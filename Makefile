@@ -13,10 +13,10 @@ proto:
 	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative proto/*.proto
 
 server:
-	./bin/${BINARY} -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -u ./databases/users.toml -n ./databases/network_nodes.toml -r
+	./bin/${BINARY} -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
 
 server_hot_reload:
-	./bin/${HOT_RELOAD_BIN} -- -g ./databases/genesis.json -d ./databases/blocks.db -k ./databases/keystore/ -u ./databases/users.toml -n ./databases/network_nodes.toml -r
+	./bin/${HOT_RELOAD_BIN} -- -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
 
 dep:
 	go mod download

@@ -53,12 +53,12 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 ### Run as client
 ```
-make build && ./simple-blockchain-quickstart -d ./databases/blocks.db -g ./databases/genesis.json -k ./databases/keystore/ -u ./databases/users.toml transaction list
+make build && ./simple-blockchain-quickstart -d ./testdata/blocks.db -g ./testdata/genesis.json -k ./testdata/keystore/ -u ./testdata/users.toml transaction list
 go build -o simple-blockchain-quickstart
-1.656521937350836e+09	info	Transactions file: ./databases/blocks.db
-1.656521937350888e+09	info	Genesis file: ./databases/genesis.json
-1.656521937350891e+09	info	Users file: ./databases/users.toml
-1.656521937350893e+09	info	Keystore dir: ./databases/keystore/
+1.656521937350836e+09	info	Transactions file: ./testdata/blocks.db
+1.656521937350888e+09	info	Genesis file: ./testdata/genesis.json
+1.656521937350891e+09	info	Users file: ./testdata/users.toml
+1.656521937350893e+09	info	Keystore dir: ./testdata/keystore/
 1.6565219373508952e+09	info	Output: console
 1.6565219373573241e+09	info	#####################
 1.6565219373573499e+09	info	# Accounts balances #
@@ -72,9 +72,9 @@ go build -o simple-blockchain-quickstart
 ```
 ### Run as node
 ```
-./simple-blockchain-quickstart -g ./databases/genesis.json -d ./databases/blocks.db -r
-1.6558218035227594e+09  info    Transactions file: ./databases/blocks.db
-1.6558218035228403e+09  info    Genesis file: ./databases/genesis.json
+./simple-blockchain-quickstart -g ./testdata/genesis.json -d ./testdata/blocks.db -r
+1.6558218035227594e+09  info    Transactions file: ./testdata/blocks.db
+1.6558218035228403e+09  info    Genesis file: ./testdata/genesis.json
 1.6558218035228572e+09  info    Output: console
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
  - using env:   export GIN_MODE=release
@@ -130,7 +130,7 @@ export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
 export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
 export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
 ```
-The users are declared in ```./databases/users.toml```. See the Test data section for the test accounts.
+The users are declared in ```./testdata/users.toml```. See the Test data section for the test accounts.
 ```
 curl localhost:8080/api/balances/ -X POST                                                                                                                          15:03:11
 {"error":{"code":401,"status":"Unauthorized","message":"authentication token cannot be found","context":[]}}
@@ -150,7 +150,7 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$FuSUZQ0mrTM9uIpP8qpNUw$nd21jtgUZjJjz078
 
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore1
-Keystore: databases/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
+Keystore: testdata/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
 ```
 ```
 Username: cloudvenger
@@ -159,5 +159,5 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQ
 
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore2
-Keystore: databases/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
+Keystore: testdata/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
 ```

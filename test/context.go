@@ -6,11 +6,11 @@ import (
 
 var (
 	//var which set the app context
-	GenesisFilePath      = "../../databases/testdata/genesis_test.json"
-	EmptyGenesisFilePath = "../../databases/testdata/genesis_empty.json"
-	BlocksFilePath       = "../../databases/testdata/blocks_test.db"
-	EmptyBlocksFilePath  = "../../databases/testdata/blocks_empty.db"
-	KeystoreDirPath      = "../../databases/testdata/keystore/"
+	GenesisFilePath      = "../../test/testdata/genesis_test.json"
+	EmptyGenesisFilePath = "../../test/testdata/genesis_empty.json"
+	BlocksFilePath       = "../../test/testdata/blocks_test.db"
+	EmptyBlocksFilePath  = "../../test/testdata/blocks_empty.db"
+	KeystoreDirPath      = "../../test/testdata/keystore/"
 
 	//functions that are used to verify whether a test is valid or not
 	StandardHttpValidationFunc = func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
