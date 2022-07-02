@@ -1,0 +1,6 @@
+.air.toml
+.gitignore
+test
+deployment_script
+.circleci
+.github

@@ -1,4 +1,4 @@
-# Simple-blockchain-quickstart [![CircleCI](https://dl.circleci.com/status-badge/img/gh/v4lproik/simple-blockchain-quickstart/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/v4lproik/simple-blockchain-quickstart/tree/master) [![codecov](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart/branch/master/graph/badge.svg?token=LBUG7Y80Q9)](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart) [![Go Report Card](https://goreportcard.com/badge/github.com/v4lproik/simple-blockchain-quickstart)](https://goreportcard.com/report/github.com/v4lproik/simple-blockchain-quickstart) [![api doc](https://badges.aleen42.com/src/apiary.svg)](https://simpleblockchainquickstart.docs.apiary.io/) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](.github/ISSUE_TEMPLATE/code_of_conduct.md)
+# Simple-blockchain-quickstart [![CircleCI](https://dl.circleci.com/status-badge/img/gh/v4lproik/simple-blockchain-quickstart/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/v4lproik/simple-blockchain-quickstart/tree/master) [![codecov](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart/branch/master/graph/badge.svg?token=LBUG7Y80Q9)](https://codecov.io/gh/v4lproik/simple-blockchain-quickstart) [![Go Report Card](https://goreportcard.com/badge/github.com/v4lproik/simple-blockchain-quickstart)](https://goreportcard.com/report/github.com/v4lproik/simple-blockchain-quickstart) [![api doc](https://badges.aleen42.com/src/apiary.svg)](https://simpleblockchainquickstart.docs.apiary.io/) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](.github/ISSUE_TEMPLATE/code_of_conduct.md) [![Docker Image Size](https://badgen.net/docker/size/v4lproik/simple-blockchain-quickstart?icon=docker&label=image%20size)](https://hub.docker.com/r/v4lproik/simple-blockchain-quickstart/)
 
 This is merely a skeleton that helps you quickly set up a simplified version of a blockchain app written in Golang.
 ## Getting started
@@ -13,6 +13,7 @@ make dep
 ```
 ### Set env variables  
 ```
+cat config/local.env
 export SBQ_ENV="local"
 export SBQ_SERVER_ADDRESS="localhost"
 export SBQ_SERVER_PORT="8080"
@@ -52,12 +53,12 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 ### Run as client
 ```
-make build && ./simple-blockchain-quickstart -d ./databases/blocks.db -g ./databases/genesis.json -k ./databases/keystore/ -u ./databases/users.toml transaction list
+make build && ./simple-blockchain-quickstart -d ./testdata/blocks.db -g ./testdata/genesis.json -k ./testdata/keystore/ -u ./testdata/users.toml transaction list
 go build -o simple-blockchain-quickstart
-1.656521937350836e+09	info	Transactions file: ./databases/blocks.db
-1.656521937350888e+09	info	Genesis file: ./databases/genesis.json
-1.656521937350891e+09	info	Users file: ./databases/users.toml
-1.656521937350893e+09	info	Keystore dir: ./databases/keystore/
+1.656521937350836e+09	info	Transactions file: ./testdata/blocks.db
+1.656521937350888e+09	info	Genesis file: ./testdata/genesis.json
+1.656521937350891e+09	info	Users file: ./testdata/users.toml
+1.656521937350893e+09	info	Keystore dir: ./testdata/keystore/
 1.6565219373508952e+09	info	Output: console
 1.6565219373573241e+09	info	#####################
 1.6565219373573499e+09	info	# Accounts balances #
@@ -71,9 +72,9 @@ go build -o simple-blockchain-quickstart
 ```
 ### Run as node
 ```
-./simple-blockchain-quickstart -g ./databases/genesis.json -d ./databases/blocks.db -r
-1.6558218035227594e+09  info    Transactions file: ./databases/blocks.db
-1.6558218035228403e+09  info    Genesis file: ./databases/genesis.json
+./simple-blockchain-quickstart -g ./testdata/genesis.json -d ./testdata/blocks.db -r
+1.6558218035227594e+09  info    Transactions file: ./testdata/blocks.db
+1.6558218035228403e+09  info    Genesis file: ./testdata/genesis.json
 1.6558218035228572e+09  info    Output: console
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
  - using env:   export GIN_MODE=release
@@ -82,6 +83,17 @@ go build -o simple-blockchain-quickstart
 [GIN-debug] GET    /api/healthz              --> github.com/v4lproik/simple-blockchain-quickstart/domains/healthz.RunDomain.func1 (5 handlers)
 1.6558218035261767e+09  info    start server without tls
 [GIN-debug] Listening and serving HTTP on 127.0.0.1:8080
+```
+### Run in container
+The docker image has been built so the mandatory options are passed in an env file. The extra options are passed through the variable ```cmd```.
+To sum up ```cmd``` is responsible for switching from running the app as a client or as a node. The options related to the app itself are stored in ```config/<env>.conf```.
+```
+#first remove all images locally if you rebuild from this folder
+docker-compose down --rmi all
+#eg. run as a node for fish shell users
+set -l cmd -r; docker-compose -f docker-compose-local.yml up
+#eg. run as cli for bash users
+cmd="transaction list" docker-compose -f docker-compose-local.yml up
 ```
 ## Testing
 ```
@@ -118,7 +130,7 @@ export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
 export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
 export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
 ```
-The users are declared in ```./databases/users.toml```. See the Test data section for the test accounts.
+The users are declared in ```./testdata/users.toml```. See the Test data section for the test accounts.
 ```
 curl localhost:8080/api/balances/ -X POST                                                                                                                          15:03:11
 {"error":{"code":401,"status":"Unauthorized","message":"authentication token cannot be found","context":[]}}
@@ -138,7 +150,7 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$FuSUZQ0mrTM9uIpP8qpNUw$nd21jtgUZjJjz078
 
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore1
-Keystore: databases/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
+Keystore: testdata/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
 ```
 ```
 Username: cloudvenger
@@ -147,5 +159,5 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQ
 
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore2
-Keystore: databases/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
+Keystore: testdata/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
 ```
