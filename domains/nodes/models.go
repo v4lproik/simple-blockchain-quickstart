@@ -4,13 +4,16 @@ import "github.com/v4lproik/simple-blockchain-quickstart/common/models"
 
 type StatusNode struct {
 	Hash         models.Hash
-	Number       uint64
-	NetworkNodes []NetworkNode
+	Height       uint64
+	NetworkNodes map[NetworkNodeIp]NetworkNode
 }
 
+type NetworkNodeIp string
 type NetworkNode struct {
-	Ip          string
+	Name        string
 	Port        uint64
 	IsBootstrap bool
 	IsActive    bool
 }
+
+//utils

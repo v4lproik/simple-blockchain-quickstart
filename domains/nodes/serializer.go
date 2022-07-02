@@ -6,10 +6,11 @@ import (
 
 type NodeSerializer struct {
 	models.State
-	nodes []NetworkNode
+	nodes map[NetworkNodeIp]NetworkNode
 }
 
 type NetworkNodeResponse struct {
+	Name        string `json:"name"`
 	Ip          string `json:"ip"`
 	Port        uint64 `json:"port"`
 	IsBootstrap bool   `json:"is_bootstrap"`
@@ -28,13 +29,16 @@ func (n *NodeSerializer) Response() NetworkNodesResponse {
 	response.Height = n.State.GetLatestBlockHeight()
 
 	nodesResponse := make([]NetworkNodeResponse, len(n.nodes))
-	for i, node := range n.nodes {
+	i := 0
+	for ip, node := range n.nodes {
 		nodesResponse[i] = NetworkNodeResponse{
-			Ip:          node.Ip,
+			Name:        node.Name,
+			Ip:          string(ip),
 			Port:        node.Port,
 			IsBootstrap: node.IsBootstrap,
 			IsActive:    node.IsActive,
 		}
+		i++
 	}
 	response.NetworkNodeResponse = nodesResponse
 
