@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -14,9 +15,15 @@ func RunDomain(r *gin.Engine, nodeService *NodeService, stateService services.St
 		v1.Use(middleware)
 	}
 
+	//register http endpoints
 	NodesRegister(v1.Group("/"), &NodesEnv{
 		nodeService:  nodeService,
 		stateService: stateService,
 		errorBuilder: common.NewErrorBuilder(),
 	})
+
+	//run background tasks
+	manager := NewNodeTaskManager(5, nodeService, stateService)
+	ctx := context.Background()
+	go manager.Run(ctx)
 }

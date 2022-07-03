@@ -6,7 +6,7 @@ import (
 
 type NodeSerializer struct {
 	models.State
-	nodes map[NetworkNodeIp]NetworkNode
+	nodes map[NetworkNodeAddress]NetworkNode
 }
 
 type NetworkNodeResponse struct {
@@ -30,11 +30,11 @@ func (n *NodeSerializer) Response() NetworkNodesResponse {
 
 	nodesResponse := make([]NetworkNodeResponse, len(n.nodes))
 	i := 0
-	for ip, node := range n.nodes {
+	for address, node := range n.nodes {
 		nodesResponse[i] = NetworkNodeResponse{
 			Name:        node.Name,
-			Ip:          string(ip),
-			Port:        node.Port,
+			Ip:          address.ip,
+			Port:        address.port,
 			IsBootstrap: node.IsBootstrap,
 			IsActive:    node.IsActive,
 		}

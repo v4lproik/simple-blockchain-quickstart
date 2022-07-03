@@ -142,5 +142,4 @@ func bindFunctionalDomains(r *gin.Engine) {
 			log.S().Fatalf("the domain %s is unknown", domain)
 		}
 	}
-
 }

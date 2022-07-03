@@ -34,7 +34,7 @@ func NewNodeService(nodeDatabasePath string) (*NodeService, error) {
 }
 
 // List nodes in the network if found, nil otherwise
-func (u *NodeService) List() (map[NetworkNodeIp]NetworkNode, error) {
+func (u *NodeService) List() (map[NetworkNodeAddress]NetworkNode, error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
@@ -50,12 +50,11 @@ func (u *NodeService) List() (map[NetworkNodeIp]NetworkNode, error) {
 	}
 
 	nodesNb := len(networkNodes.Nodes)
-	nodes := make(map[NetworkNodeIp]NetworkNode, nodesNb)
+	nodes := make(map[NetworkNodeAddress]NetworkNode, nodesNb)
 	i := 0
 	for nodeName, node := range networkNodes.Nodes {
-		nodes[NetworkNodeIp(node.Address)] = NetworkNode{
+		nodes[NewNetworkNodeAddress(node.Address, node.Port)] = NetworkNode{
 			Name:        string(nodeName),
-			Port:        node.Port,
 			IsBootstrap: node.Is_bootstrap,
 			IsActive:    node.Is_active,
 		}
@@ -65,15 +64,15 @@ func (u *NodeService) List() (map[NetworkNodeIp]NetworkNode, error) {
 }
 
 // Add nodes in the database, return error otherwise
-func (u *NodeService) Add(nodes map[NetworkNodeIp]NetworkNode) error {
+func (u *NodeService) Add(nodes map[NetworkNodeAddress]NetworkNode) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
 	mapToInsert := make(map[NetworkNodeName]NetworkNodeRecord, len(nodes))
-	for ip, node := range nodes {
+	for address, node := range nodes {
 		mapToInsert[NetworkNodeName(node.Name)] = NetworkNodeRecord{
-			Address:      string(ip),
-			Port:         node.Port,
+			Address:      address.ip,
+			Port:         address.port,
 			Is_bootstrap: node.IsBootstrap,
 			Is_active:    node.IsActive,
 		}
