@@ -29,8 +29,8 @@ type BlockHeader struct {
 }
 
 type BlockDB struct {
-	Key   Hash  `json:"hash"`
-	Value Block `json:"block"`
+	Hash  Hash  `json:"hash"`
+	Block Block `json:"block"`
 }
 
 func NewBlock(parent Hash, height uint64, time uint64, txs []Transaction) Block {

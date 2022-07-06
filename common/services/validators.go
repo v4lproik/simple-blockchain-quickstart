@@ -63,6 +63,16 @@ func ValidateAccount(fl validator.FieldLevel) bool {
 	return true
 }
 
+func ValidateHash(fl validator.FieldLevel) bool {
+	if hash, ok := fl.Field().Interface().(string); ok {
+		//check blocks model for length
+		if len(hash) == 64 {
+			return true
+		}
+	}
+	return false
+}
+
 func (v ValidatorService) AddValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		err := v.RegisterValidation("enum", ValidateEnum)
@@ -76,6 +86,10 @@ func (v ValidatorService) AddValidators() {
 		err = v.RegisterValidation("account", ValidateAccount)
 		if err != nil {
 			log.S().Fatalf("custom validator account cannot be registered %v", err)
+		}
+		err = v.RegisterValidation("hash", ValidateHash)
+		if err != nil {
+			log.S().Fatalf("custom validator hash cannot be registered %v", err)
 		}
 	}
 }

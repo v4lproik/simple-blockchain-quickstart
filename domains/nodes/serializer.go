@@ -4,6 +4,7 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
+// nodes
 type NodeSerializer struct {
 	models.State
 	nodes map[NetworkNodeAddress]NetworkNode
@@ -43,4 +44,77 @@ func (n *NodeSerializer) Response() NetworkNodesResponse {
 	response.NetworkNodeResponse = nodesResponse
 
 	return *response
+}
+
+//blocks
+type BlockSerializer struct {
+	block models.BlockDB
+}
+
+type BlocksSerializer struct {
+	blocks []models.BlockDB
+}
+
+type TransactionResponse struct {
+	From   models.Account `json:"from"`
+	To     models.Account `json:"to"`
+	Value  uint           `json:"value"`
+	Reason string         `json:"reason"`
+}
+
+type BlockHeaderResponse struct {
+	Parent models.Hash `json:"parent"`
+	Height uint64      `json:"height"`
+	Time   uint64      `json:"time"`
+}
+
+type BlockResponse struct {
+	Header BlockHeaderResponse   `json:"header"`
+	Txs    []TransactionResponse `json:"transactions"`
+}
+
+type BlockWrapperResponse struct {
+	Hash  models.Hash   `json:"hash"`
+	Block BlockResponse `json:"block"`
+}
+
+func (n *BlockSerializer) Response() BlockWrapperResponse {
+	response := BlockWrapperResponse{}
+	block := n.block.Block
+	hash := n.block.Hash
+
+	// add block hash
+	response.Hash = hash
+
+	// add block metadata
+	response.Block = BlockResponse{
+		Header: BlockHeaderResponse{
+			Parent: block.Header.Parent,
+			Height: block.Header.Height,
+			Time:   block.Header.Time,
+		},
+	}
+
+	// add block transactions
+	txRes := make([]TransactionResponse, len(block.Txs))
+	for i, tx := range block.Txs {
+		txRes[i] = TransactionResponse{
+			From:   tx.From,
+			To:     tx.To,
+			Value:  tx.Value,
+			Reason: tx.Reason,
+		}
+	}
+	response.Block.Txs = txRes
+
+	return response
+}
+
+func (n *BlocksSerializer) Response() []BlockWrapperResponse {
+	response := make([]BlockWrapperResponse, len(n.blocks))
+	for i, block := range n.blocks {
+		serializer := BlockSerializer{block: block}
+		response[i] = serializer.Response()
+	}
+	return response
 }

@@ -6,10 +6,10 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
 
-const BALANCES_DOMAIN_URL = "/api/transactions"
+const TRANSACTIONS_DOMAIN_URL = "/api/transactions"
 
 func RunDomain(r *gin.Engine, stateService services.StateService, transactionService services.TransactionService, middlewares ...gin.HandlerFunc) {
-	v1 := r.Group(BALANCES_DOMAIN_URL)
+	v1 := r.Group(TRANSACTIONS_DOMAIN_URL)
 	for _, middleware := range middlewares {
 		v1.Use(middleware)
 	}

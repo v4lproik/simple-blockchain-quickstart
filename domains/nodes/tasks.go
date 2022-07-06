@@ -57,9 +57,9 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 		return fmt.Errorf("couldn't retrieve blockchain state %v", err)
 	}
 
-	for address, node := range knownNetworkNodes {
+	for address, _ := range knownNetworkNodes {
 		log.S().Errorf("trying to get node status %s status", address.String())
-		status, err := getNodeStatus(address, node)
+		status, err := getNodeStatus(address)
 		if err != nil {
 			log.S().Errorf("unable to get node %s status %v", address.String(), err)
 			continue
@@ -83,7 +83,7 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 	return nil
 }
 
-func getNodeStatus(nodeAddress NetworkNodeAddress, node NetworkNode) (NetworkNodeStatus, error) {
+func getNodeStatus(nodeAddress NetworkNodeAddress) (NetworkNodeStatus, error) {
 	url := fmt.Sprintf("http://%s%s%s", nodeAddress.String(), NODES_DOMAIN_URL, STATUS_NODE_ENDPOINT)
 
 	//TODO Do not use default http client

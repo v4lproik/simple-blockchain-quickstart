@@ -20,7 +20,7 @@ func NewFileStateService(fileDatabaseConf conf.FileDatabaseConf) *FileStateServi
 	}
 }
 
-func (a FileStateService) GetState() (models.State, error) {
+func (a *FileStateService) GetState() (models.State, error) {
 	state, err := models.NewStateFromFile(a.fileDatabaseConf.GenesisFilePath(), a.fileDatabaseConf.TransactionFilePath())
 	if err != nil {
 		return nil, fmt.Errorf("cannot get blockchain state: %v", err)

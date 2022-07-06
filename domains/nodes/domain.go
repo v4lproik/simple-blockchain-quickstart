@@ -9,7 +9,8 @@ import (
 
 const NODES_DOMAIN_URL = "/api/nodes"
 
-func RunDomain(r *gin.Engine, nodeService *NodeService, stateService services.StateService, middlewares ...gin.HandlerFunc) {
+func RunDomain(r *gin.Engine, nodeService *NodeService, stateService services.StateService,
+	blockService services.BlockService, middlewares ...gin.HandlerFunc) {
 	v1 := r.Group(NODES_DOMAIN_URL)
 	for _, middleware := range middlewares {
 		v1.Use(middleware)
@@ -19,6 +20,7 @@ func RunDomain(r *gin.Engine, nodeService *NodeService, stateService services.St
 	NodesRegister(v1.Group("/"), &NodesEnv{
 		nodeService:  nodeService,
 		stateService: stateService,
+		blockService: blockService,
 		errorBuilder: common.NewErrorBuilder(),
 	})
 

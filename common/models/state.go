@@ -36,7 +36,7 @@ type GenesisFile struct {
 	Balances map[string]uint `json:"balances"`
 }
 
-func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State, error) {
+func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*FromFileState, error) {
 	//read genesis file
 	file, err := ioutil.ReadFile(genesisFilePath)
 	if err != nil {
@@ -60,15 +60,23 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State
 	}
 
 	//read transactions database
-	f, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
+	db, err := getTransactionsDb(transactionFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	scanner := bufio.NewScanner(f)
-	state := &FromFileState{balances, make([]Transaction, 0), f, Hash{}, Block{}}
+	state, err := getFileStateFromFile(balances, db)
+	if err != nil {
+		return state, err
+	}
+	return state, nil
+}
+
+func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileState, error) {
+	state := &FromFileState{balances, make([]Transaction, 0), db, Hash{}, Block{}}
 
 	//for each block found in database
+	scanner := bufio.NewScanner(db)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return nil, err
@@ -76,21 +84,25 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (State
 
 		blockFsJson := scanner.Bytes()
 		var blockDB BlockDB
-		err = json.Unmarshal(blockFsJson, &blockDB)
+		err := json.Unmarshal(blockFsJson, &blockDB)
 		if err != nil {
 			return nil, err
 		}
 
-		err = state.applyBlock(blockDB.Value)
+		err = state.applyBlock(blockDB.Block)
 		if err != nil {
 			return nil, err
 		}
 
 		//keep a copy of latest block and its hash so it can be exposed to the network
-		state.latestBlockHash = blockDB.Key
-		state.latestBlock = blockDB.Value
+		state.latestBlockHash = blockDB.Hash
+		state.latestBlock = blockDB.Block
 	}
 	return state, nil
+}
+
+func getTransactionsDb(transactionFilePath string) (*os.File, error) {
+	return os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
 }
 
 func (s *FromFileState) Balances() map[Account]uint {
@@ -141,7 +153,6 @@ func (s *FromFileState) Persist() (Hash, error) {
 	s.transactionsPool = []Transaction{}
 
 	return s.latestBlockHash, nil
-
 }
 
 func (s *FromFileState) applyBlock(b Block) error {

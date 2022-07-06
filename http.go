@@ -116,6 +116,11 @@ func bindFunctionalDomains(r *gin.Engine) {
 		log.S().Fatalf("cannot create node service %v", err)
 	}
 
+	blockService, err := services.NewFileBlockService(opts.TransactionsFilePath)
+	if err != nil {
+		log.S().Fatalf("cannot create block service %v", err)
+	}
+
 	//initiate middlewares
 	auto401 := apiConf.Auth.IsAuthenticationActivated
 	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
@@ -130,7 +135,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:
-			nodes.RunDomain(r, nodeService, fileStateService)
+			nodes.RunDomain(r, nodeService, fileStateService, blockService)
 		case TRANSACTIONS:
 			transactions.RunDomain(r, fileStateService, fileTransactionService, authMiddleware)
 		case WALLETS:
