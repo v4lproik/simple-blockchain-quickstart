@@ -117,7 +117,7 @@ func (s *FromFileState) Add(tx Transaction) error {
 	return nil
 }
 
-func (s *FromFileState) Persist() (Hash, error) {
+func (s *FromFileState) Persist(block Block) (Hash, error) {
 	hash := Hash{}
 
 	//create a new Block only with the new transactions

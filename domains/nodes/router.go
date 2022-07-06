@@ -65,11 +65,16 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 		return
 	}
 
-	hashFrom := models.Hash{}
 	//verified in parameter above
-	hashFrom.UnmarshalText([]byte(params.From))
+	hashFrom := models.Hash{}
+	err := hashFrom.UnmarshalText([]byte(params.From))
+	if err != nil {
+		AbortWithError(c, *env.errorBuilder.NewUnknownError())
+		return
+	}
+	log.S().Debugf("starting process of collecting blocks from hash=%s", params.From)
 
-	blocks, err := env.blockService.GetBlockNextBlocksFrom(hashFrom)
+	blocks, err := env.blockService.GetNextBlocksFromHash(hashFrom)
 	if err != nil {
 		log.S().Error(fmt.Errorf("NodeListBlocks: couldn't retrieve blocks from DB: %w", err))
 		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "blocks could not be retrieved"))
@@ -80,6 +85,6 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	serializer := BlocksSerializer{
 		blocks: blocks,
 	}
-	c.JSON(http.StatusOK, gin.H{"status": serializer.Response()})
+	c.JSON(http.StatusOK, gin.H{"blocks": serializer.Response()})
 	return
 }
