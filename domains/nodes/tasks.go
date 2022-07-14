@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -16,18 +17,27 @@ import (
 type NodeTaskManager struct {
 	refreshIntervalInSeconds uint64
 	nodeService              *NodeService
-	stateService             services.StateService
+	state                    models.State
 	blockService             services.BlockService
 }
 
-func NewNodeTaskManager(refreshInterval uint64, nodeService *NodeService, stateService services.StateService,
-	blockService services.BlockService) *NodeTaskManager {
+func NewNodeTaskManager(
+	refreshInterval uint64,
+	nodeService *NodeService,
+	state models.State,
+	blockService services.BlockService) (*NodeTaskManager, error) {
+	if state == nil {
+		return nil, errors.New("NewNodeTaskManager: state cannot be nil")
+	}
+	if nodeService == nil {
+		return nil, errors.New("NewNodeTaskManager: node service cannot be nil")
+	}
 	return &NodeTaskManager{
 		refreshIntervalInSeconds: refreshInterval,
 		nodeService:              nodeService,
-		stateService:             stateService,
+		state:                    state,
 		blockService:             blockService,
-	}
+	}, nil
 }
 
 func (n *NodeTaskManager) Run(ctx context.Context) {
@@ -57,7 +67,7 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 		log.S().Debugf("no network nodes found... no sync...")
 	}
 
-	state, err := n.stateService.GetState()
+	state := n.state
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve blockchain state %v", err)
 	}
@@ -69,7 +79,6 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 			log.S().Errorf("unable to get node %s status %v", address.String(), err)
 			continue
 		}
-
 		currentHeight := state.GetLatestBlockHeight()
 		if currentHeight < status.Height {
 			missingBlockCount := status.Height - currentHeight
@@ -84,7 +93,7 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 			}
 
 			// insert the new block into our own database
-
+			_ = state.AddBlocks(blocks)
 		}
 
 		for networkNodeIp, newNode := range status.NetworkNodes {
@@ -148,7 +157,7 @@ func getStatusNode(r *http.Response) (NetworkNodeStatus, error) {
 	return statusNode, nil
 }
 
-func getNextNodeBlocksFromHash(nodeAddress NetworkNodeAddress, hash models.Hash) ([]models.BlockDB, error) {
+func getNextNodeBlocksFromHash(nodeAddress NetworkNodeAddress, hash models.Hash) ([]models.Block, error) {
 	// generate url
 	url := fmt.Sprintf("http://%s%s%s", nodeAddress.String(), NODES_DOMAIN_URL, BLOCKS_NODE_ENDPOINT)
 
@@ -168,18 +177,14 @@ func getNextNodeBlocksFromHash(nodeAddress NetworkNodeAddress, hash models.Hash)
 	cc := &http.Client{}
 	res, err := cc.Do(req)
 	if err != nil {
-		return []models.BlockDB{}, err
+		return []models.Block{}, err
 	}
 
 	return getBlocks(res)
 }
 
-type NodeListBlocksResponse struct {
-	Blocks []BlockWrapperResponse `json:"blocks"`
-}
-
-func getBlocks(r *http.Response) ([]models.BlockDB, error) {
-	var blocks []models.BlockDB
+func getBlocks(r *http.Response) ([]models.Block, error) {
+	var blocks []models.Block
 
 	reqBodyJson, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -187,35 +192,32 @@ func getBlocks(r *http.Response) ([]models.BlockDB, error) {
 	}
 	defer r.Body.Close()
 	log.S().Infof("%s", reqBodyJson)
-	var response NodeListBlocksResponse
+	var response BlocksResponse
 	err = json.Unmarshal(reqBodyJson, &response)
 	if err != nil {
 		return blocks, fmt.Errorf("unable to unmarshal response body %s", err)
 	}
 
-	var blocksRes NodeListBlocksResponse
+	var blocksRes BlocksResponse
 	err = json.Unmarshal(reqBodyJson, &blocksRes)
 	if err != nil {
 		return blocks, err
 	}
 
-	blocks = make([]models.BlockDB, len(blocksRes.Blocks))
-	for i, block := range blocksRes.Blocks {
+	blocks = make([]models.Block, len(blocksRes.Blocks))
+	for i, blockRes := range blocksRes.Blocks {
 		// init block structure
-		blockDB := models.BlockDB{
-			Hash: block.Hash,
-			Block: models.Block{
-				Header: models.BlockHeader{
-					Parent: block.Block.Header.Parent,
-					Height: block.Block.Header.Height,
-					Time:   block.Block.Header.Time,
-				},
+		block := models.Block{
+			Header: models.BlockHeader{
+				Parent: blockRes.Header.Parent,
+				Height: blockRes.Header.Height,
+				Time:   blockRes.Header.Time,
 			},
 		}
 
 		// add transactions
-		txs := make([]models.Transaction, len(block.Block.Txs))
-		for y, tx := range block.Block.Txs {
+		txs := make([]models.Transaction, len(blockRes.Txs))
+		for y, tx := range blockRes.Txs {
 			txs[y] = models.Transaction{
 				From:   tx.From,
 				To:     tx.To,
@@ -223,10 +225,10 @@ func getBlocks(r *http.Response) ([]models.BlockDB, error) {
 				Reason: tx.Reason,
 			}
 		}
-		blockDB.Block.Txs = txs
+		block.Txs = txs
 
 		// add to array of blocks
-		blocks[i] = blockDB
+		blocks[i] = block
 	}
 
 	return blocks, nil

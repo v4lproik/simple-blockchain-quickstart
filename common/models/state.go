@@ -3,21 +3,41 @@ package models
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
+	copy "github.com/barkimedes/go-deepcopy"
 	log "go.uber.org/zap"
 	"io/ioutil"
 	"os"
 	"time"
 )
 
+var (
+	ErrNextBlockHeight = errors.New("latest block height doesn't match with next block (height + 1)")
+	ErrNextBlockHash   = errors.New("latest block hash doesn't match with next block")
+)
+
+type GenesisFile struct {
+	Time     time.Time       `json:"genesis_time"`
+	ChainId  string          `json:"chain_id"`
+	Balances map[string]uint `json:"balances"`
+}
+
 type (
 	State interface {
-		Add(tx Transaction) error
+		// Add adds a transaction
+		Add(Transaction) error
+		// AddBlock to the state
+		AddBlock(Block) error
+		// AddBlocks to the state
+		AddBlocks([]Block) error
+		// Balances return the balances as map
 		Balances() map[Account]uint
 		Persist() (Hash, error)
 		Close() error
 		GetLatestBlockHash() Hash
 		GetLatestBlockHeight() uint64
+		//HasGenesisBlock() bool
 		Print()
 	}
 )
@@ -28,12 +48,6 @@ type FromFileState struct {
 	dbFile           *os.File
 	latestBlockHash  Hash
 	latestBlock      Block
-}
-
-type GenesisFile struct {
-	Time     time.Time       `json:"genesis_time"`
-	ChainId  string          `json:"chain_id"`
-	Balances map[string]uint `json:"balances"`
 }
 
 func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*FromFileState, error) {
@@ -89,12 +103,16 @@ func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileStat
 			return nil, err
 		}
 
-		err = state.applyBlock(blockDB.Block)
+		// we do not call applyBlocks here
+		// we are initiating the state from the initial database containing legit blocks, so it's
+		// safe not to apply any business logic on the blocks themselves
+		err = state.applyTxs(blockDB.Block.Txs)
 		if err != nil {
 			return nil, err
 		}
 
-		//keep a copy of latest block and its hash so it can be exposed to the network
+		//keep a copy of the latest block and its hash,
+		// so it can be exposed to the network
 		state.latestBlockHash = blockDB.Hash
 		state.latestBlock = blockDB.Block
 	}
@@ -110,14 +128,68 @@ func (s *FromFileState) Balances() map[Account]uint {
 }
 
 func (s *FromFileState) Add(tx Transaction) error {
-	if err := s.apply(tx); err != nil {
+	if err := s.applyTx(tx); err != nil {
 		return err
 	}
 	s.transactionsPool = append(s.transactionsPool, tx)
 	return nil
 }
 
-func (s *FromFileState) Persist(block Block) (Hash, error) {
+func (s *FromFileState) AddBlock(block Block) error {
+	// as we use the transaction pool to persist transactions, we have two choices here
+	// either we force a flush by persisting every pending transaction or we copy the state,
+	// we block the state until sync is done and then we re-establish the state and accept
+	// new transactions which will be added to the freshly re-restablished state
+	// let's go for the latter
+
+	// TODO: create benchmark
+	// our state is a pointer so we need to copy its value
+	copiedState, err := copy.Anything(*s)
+	if err != nil {
+		return fmt.Errorf("AddBlock: cannot copy the state: %w", err)
+	}
+	copiedStateFromFile := copiedState.(*FromFileState)
+
+	// validate the block
+	err = copiedStateFromFile.applyBlock(block)
+	if err != nil {
+		return err
+	}
+
+	// create a blockFS, ready to be added to the state
+	blockHash, err := block.Hash()
+	if err != nil {
+		return err
+	}
+
+	blockDB := BlockDB{
+		Hash:  blockHash,
+		Block: block,
+	}
+	err = s.persistBlockToDB(blockDB)
+	if err != nil {
+		return err
+	}
+
+	// now the blocks have been written in the DB
+	// the state (copy) balance has been updated each time a block has been inserted
+	// in the database. As no error happened during the writing process, we
+	// then need to update the state (original).
+	s.balances = copiedStateFromFile.Balances()
+	s.latestBlock = block
+	s.latestBlockHash = blockHash
+
+	return nil
+}
+
+func (s *FromFileState) AddBlocks(blocks []Block) error {
+	for _, block := range blocks {
+		return s.AddBlock(block)
+	}
+	return nil
+}
+
+func (s *FromFileState) Persist() (Hash, error) {
 	hash := Hash{}
 
 	//create a new Block only with the new transactions
@@ -135,19 +207,14 @@ func (s *FromFileState) Persist(block Block) (Hash, error) {
 
 	//create database block which includes its hash and the transactions (block itself)
 	blockDB := BlockDB{blockHash, block}
-	blockDBJson, err := json.Marshal(blockDB)
+	err = s.persistBlockToDB(blockDB)
 	if err != nil {
-		return hash, err
-	}
-
-	//add to the DB the new block as well as a new line
-	_, err = s.dbFile.Write(append(blockDBJson, '\n'))
-	if err != nil {
-		return hash, err
+		return blockHash, err
 	}
 
 	//latest block of the state is now the hash of the latest block inserted into the database
 	s.latestBlockHash = blockHash
+	s.latestBlock = blockDB.Block
 
 	//empty the transactions pool as it should only transactions that haven't been written to database yet
 	s.transactionsPool = []Transaction{}
@@ -155,17 +222,48 @@ func (s *FromFileState) Persist(block Block) (Hash, error) {
 	return s.latestBlockHash, nil
 }
 
-func (s *FromFileState) applyBlock(b Block) error {
-	for _, tx := range b.Txs {
-		if err := s.apply(tx); err != nil {
-			return err
-		}
+func (s *FromFileState) persistBlockToDB(block BlockDB) error {
+	blockDBJson, err := json.Marshal(block)
+	if err != nil {
+		return err
 	}
 
+	//add to the DB the new block as well as a new line
+	_, err = s.dbFile.Write(append(blockDBJson, '\n'))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (s *FromFileState) apply(tx Transaction) error {
+// applyBlock checks if a block can be added to the database
+// also checks if the blocks which is trying to be added has previousBlock (or parentBlock)
+// is block.height == previousBlock.height + 1 and that its previousBlock.parentHash points to block.hash
+func (s *FromFileState) applyBlock(block Block) error {
+	if block.Header.Height != s.latestBlock.Header.Height+1 {
+		return fmt.Errorf("applyBlock: %w", ErrNextBlockHeight)
+	}
+
+	if !CompareBlockHash(s.latestBlockHash, block.Header.Parent) {
+		return fmt.Errorf("applyBlock: %w", ErrNextBlockHash)
+	}
+
+	return s.applyTxs(block.Txs)
+}
+
+// applyTxs is a wrapper calling applyTx and propagate error if any
+func (s *FromFileState) applyTxs(txs []Transaction) error {
+	for _, tx := range txs {
+		if err := s.applyTx(tx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// applyTx checks if a transaction can be added to the blockchain
+// also checks if the account has enough money as well as the transaction metadata is valid
+func (s *FromFileState) applyTx(tx Transaction) error {
 	if tx.Reason == SELF_REWARD {
 		//refuse the transaction if it's a self reward with different from/to address
 		if !tx.To.isSameAccount(tx.From) {

@@ -48,11 +48,11 @@ func (n *NodeSerializer) Response() NetworkNodesResponse {
 
 //blocks
 type BlockSerializer struct {
-	block models.BlockDB
+	block models.Block
 }
 
 type BlocksSerializer struct {
-	blocks []models.BlockDB
+	blocks []models.Block
 }
 
 type TransactionResponse struct {
@@ -73,21 +73,16 @@ type BlockResponse struct {
 	Txs    []TransactionResponse `json:"transactions"`
 }
 
-type BlockWrapperResponse struct {
-	Hash  models.Hash   `json:"hash"`
-	Block BlockResponse `json:"block"`
+type BlocksResponse struct {
+	Blocks []BlockResponse `json:"blocks"`
 }
 
-func (n *BlockSerializer) Response() BlockWrapperResponse {
-	response := BlockWrapperResponse{}
-	block := n.block.Block
-	hash := n.block.Hash
-
-	// add block hash
-	response.Hash = hash
+func (n *BlockSerializer) Response() BlockResponse {
+	response := BlockResponse{}
+	block := n.block
 
 	// add block metadata
-	response.Block = BlockResponse{
+	response = BlockResponse{
 		Header: BlockHeaderResponse{
 			Parent: block.Header.Parent,
 			Height: block.Header.Height,
@@ -105,16 +100,16 @@ func (n *BlockSerializer) Response() BlockWrapperResponse {
 			Reason: tx.Reason,
 		}
 	}
-	response.Block.Txs = txRes
+	response.Txs = txRes
 
 	return response
 }
 
-func (n *BlocksSerializer) Response() []BlockWrapperResponse {
-	response := make([]BlockWrapperResponse, len(n.blocks))
+func (n *BlocksSerializer) Response() BlocksResponse {
+	response := make([]BlockResponse, len(n.blocks))
 	for i, block := range n.blocks {
 		serializer := BlockSerializer{block: block}
 		response[i] = serializer.Response()
 	}
-	return response
+	return BlocksResponse{response}
 }

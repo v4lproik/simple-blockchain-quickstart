@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/MicahParks/keyfunc v1.1.0
+	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/caarlos0/env/v6 v6.9.3
 	github.com/ethereum/go-ethereum v1.10.19
 	github.com/gin-contrib/cors v1.3.1

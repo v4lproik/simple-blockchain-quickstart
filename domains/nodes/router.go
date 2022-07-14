@@ -17,7 +17,7 @@ const BLOCKS_NODE_ENDPOINT = "/blocks"
 type NodesEnv struct {
 	errorBuilder ErrorBuilder
 	nodeService  *NodeService
-	stateService services.StateService
+	state        models.State
 	blockService services.BlockService
 }
 
@@ -34,16 +34,9 @@ func (env NodesEnv) NodeStatus(c *gin.Context) {
 		return
 	}
 
-	//get state
-	state, err := env.stateService.GetState()
-	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "state could not be found"))
-		return
-	}
-
 	//init serializer
 	serializer := &NodeSerializer{
-		State: state,
+		State: env.state,
 		nodes: nodes,
 	}
 
@@ -85,6 +78,7 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	serializer := BlocksSerializer{
 		blocks: blocks,
 	}
-	c.JSON(http.StatusOK, gin.H{"blocks": serializer.Response()})
+
+	c.JSON(http.StatusOK, serializer.Response())
 	return
 }

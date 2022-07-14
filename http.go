@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/middleware"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/models/conf"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/auth"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/balances"
@@ -76,9 +76,13 @@ func runHttpServer() {
 }
 
 func bindFunctionalDomains(r *gin.Engine) {
+	//TODO: extract business logic and put it in a state service
+	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
+	if err != nil {
+		logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %w", err)
+	}
 	//initiate services
 	errorBuilder := common.NewErrorBuilder()
-	fileStateService := services.NewFileStateService(conf.NewBlockchainFileDatabaseConf(opts.GenesisFilePath, opts.TransactionsFilePath))
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
@@ -131,13 +135,13 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case AUTH:
 			auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
 		case BALANCES:
-			balances.RunDomain(r, fileStateService, authMiddleware)
+			balances.RunDomain(r, state, authMiddleware)
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:
-			nodes.RunDomain(r, nodeService, fileStateService, blockService)
+			nodes.RunDomain(r, nodeService, state, blockService)
 		case TRANSACTIONS:
-			transactions.RunDomain(r, fileStateService, fileTransactionService, authMiddleware)
+			transactions.RunDomain(r, state, fileTransactionService, authMiddleware)
 		case WALLETS:
 			wallets.RunDomain(r, &wallets.WalletsEnv{
 				Keystore:     keystoreService,

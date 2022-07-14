@@ -17,12 +17,12 @@ import (
 
 var (
 	testBlockchainFileDatabaseConf = test.NewTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath)
-	serviceState                   = services.NewFileStateService(testBlockchainFileDatabaseConf)
+	serviceState                   = services.NewStateService(testBlockchainFileDatabaseConf)
 )
 
 func setTestBlockchainFileDatabaseConf(genesisFilePath string, transactionFilePath string, isWrongGenesisFilePath bool, isWrongTransactionFilePath bool) {
 	testBlockchainFileDatabaseConf.SetTestBlockchainFileDatabaseConf(genesisFilePath, transactionFilePath, isWrongGenesisFilePath, isWrongTransactionFilePath)
-	serviceState = services.NewFileStateService(testBlockchainFileDatabaseConf)
+	serviceState = services.NewStateService(testBlockchainFileDatabaseConf)
 }
 
 type TestBalanceResponse struct {

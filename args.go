@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
 var opts struct {
@@ -46,13 +47,20 @@ func addCommands(parser *flags.Parser) error {
 
 //transaction
 func addTransactionCommands(parser *flags.Parser) error {
-	_, err := parser.AddCommand(
+	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
+	if err != nil {
+		logger.Fatalf("addTransactionCommands: %w", err)
+	}
+
+	addT, _ := commands.NewAddTransactionCommand(state)
+	listT, _ := commands.NewListTransactionCommand(state)
+	_, err = parser.AddCommand(
 		"transaction",
 		"transaction utility commands including: add, list",
 		"Utilities developed to ease the operations and debugging of transactions.",
 		&commands.TransactionCommands{
-			Add:  *commands.NewAddTransactionCommand(opts.GenesisFilePath, opts.TransactionsFilePath),
-			List: *commands.NewListTransactionCommand(opts.GenesisFilePath, opts.TransactionsFilePath),
+			Add:  *addT,
+			List: *listT,
 		},
 	)
 	if err != nil {

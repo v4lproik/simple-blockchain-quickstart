@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"reflect"
 )
 
 type Block struct {
@@ -50,4 +51,8 @@ func (b Block) Hash() (Hash, error) {
 		return Hash{}, err
 	}
 	return sha256.Sum256(blockJson), nil
+}
+
+func CompareBlockHash(h1 Hash, h2 Hash) bool {
+	return reflect.DeepEqual(h1, h2)
 }

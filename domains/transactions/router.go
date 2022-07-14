@@ -12,7 +12,7 @@ import (
 const ADD_TRANSACTIONS_ENDPOINT = "/"
 
 type TransactionsEnv struct {
-	stateService       services.StateService
+	state              models.State
 	transactionService services.TransactionService
 	errorBuilder       ErrorBuilder
 }
@@ -46,14 +46,7 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 		string(params.Reason),
 	)
 
-	//get state
-	state, err := env.stateService.GetState()
-	if err != nil || state == nil {
-		//TODO add type of error for NewStateFromFile
-		AbortWithError(c, *env.errorBuilder.NewUnknownError())
-		return
-	}
-
+	state := env.state
 	if len(state.Balances()) == 0 {
 		AbortWithError(c, *env.errorBuilder.New(404, "balances could not be found"))
 		return
