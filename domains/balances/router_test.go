@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	"github.com/v4lproik/simple-blockchain-quickstart/common"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/test"
 	"net/http"
 	"net/http/httptest"
@@ -16,13 +17,13 @@ import (
 )
 
 var (
-	testBlockchainFileDatabaseConf = test.NewTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath)
-	serviceState                   = services.NewStateService(testBlockchainFileDatabaseConf)
+	state, _     = models.NewStateFromFile(test.GenesisFilePath, test.BlocksFilePath)
+	errorBuilder = common.NewErrorBuilder()
+	balanceEnv   = NewBalancesEnv(state, errorBuilder)
 )
 
-func setTestBlockchainFileDatabaseConf(genesisFilePath string, transactionFilePath string, isWrongGenesisFilePath bool, isWrongTransactionFilePath bool) {
-	testBlockchainFileDatabaseConf.SetTestBlockchainFileDatabaseConf(genesisFilePath, transactionFilePath, isWrongGenesisFilePath, isWrongTransactionFilePath)
-	serviceState = services.NewStateService(testBlockchainFileDatabaseConf)
+func setTestBlockchainFileDatabaseConf(genesisFilePath string, transactionFilePath string) {
+	state = nil
 }
 
 type TestBalanceResponse struct {
@@ -43,12 +44,11 @@ var ListBalancesDomainTests = []struct {
 	//---------------------   Test suit for balance endpoints   ---------------------
 	{
 		init: func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, false, false)
 		},
 		url:          BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		method:       "POST",
 		expectedCode: http.StatusOK,
-		jsonResponse: `{"balances":[{"account":"0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf","value":1003000},{"account":"0x7b65a12633dbe9a413b17db515732d69e684ebe2","value":998000}]}`,
+		jsonResponse: `{"balances":[{"account":"0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf","value":998923},{"account":"0x7b65a12633dbe9a413b17db515732d69e684ebe2","value":1001077}]}`,
 		validationFunc: func(wCodeE int, wCodeA int, testName string, wBodyE string, wBodyA string, asserts *assert.Assertions) {
 			var balances TestBalanceResponse
 			err := json.Unmarshal([]byte(wBodyA), &balances)
@@ -76,47 +76,7 @@ var ListBalancesDomainTests = []struct {
 	},
 	{
 		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, false, true)
-		},
-		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
-		"POST",
-		nil,
-		http.StatusInternalServerError,
-		`{"error":{"code":500,"status":"Internal Server Error","message":"","context":[]}}`,
-		test.StandardHttpValidationFunc,
-		"request balances list with wrong genesis path should return code 500",
-		func(req *http.Request) {},
-	},
-	{
-		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, true, true)
-
-		},
-		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
-		"POST",
-		nil,
-		http.StatusInternalServerError,
-		`{"error":{"code":500,"status":"Internal Server Error","message":"","context":[]}}`,
-		test.StandardHttpValidationFunc,
-		"request balances list with wrong transaction path should return code 500",
-		func(req *http.Request) {},
-	},
-	{
-		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf(test.GenesisFilePath, test.BlocksFilePath, true, true)
-		},
-		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
-		"POST",
-		nil,
-		http.StatusInternalServerError,
-		`{"error":{"code":500,"status":"Internal Server Error","message":"","context":[]}}`,
-		test.StandardHttpValidationFunc,
-		"request balances list with state to nil should return code 500",
-		func(req *http.Request) {},
-	},
-	{
-		func(req *http.Request) {
-			setTestBlockchainFileDatabaseConf(test.EmptyGenesisFilePath, test.EmptyBlocksFilePath, false, false)
+			balanceEnv.state = &testState{}
 		},
 		BALANCES_DOMAIN_URL + LIST_BALANCES_ENDPOINT,
 		"POST",
@@ -124,7 +84,7 @@ var ListBalancesDomainTests = []struct {
 		http.StatusNotFound,
 		`{"error":{"code":404,"status":"Not Found","message":"balances could not be found","context":[]}}`,
 		test.StandardHttpValidationFunc,
-		"request balances list with wrong transaction path should return code 500",
+		"request balances list with balances=0 should return error not found",
 		func(req *http.Request) {},
 	},
 }
@@ -158,5 +118,53 @@ func TestBalancesEnv_ListBalances(t *testing.T) {
 }
 
 func initServer(r *gin.Engine) {
-	RunDomain(r, serviceState)
+	RunDomain(r, balanceEnv)
+}
+
+//utils
+type testState struct {
+}
+
+func (t testState) Add(transaction models.Transaction) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) AddBlock(block models.Block) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) AddBlocks(blocks []models.Block) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) Balances() map[models.Account]uint {
+	return make(map[models.Account]uint, 0)
+}
+
+func (t testState) Persist() (models.Hash, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) Close() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) GetLatestBlockHash() models.Hash {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) GetLatestBlockHeight() uint64 {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t testState) Print() {
+	//TODO implement me
+	panic("implement me")
 }

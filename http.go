@@ -135,7 +135,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case AUTH:
 			auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
 		case BALANCES:
-			balances.RunDomain(r, state, authMiddleware)
+			balances.RunDomain(r, balances.NewBalancesEnv(state, errorBuilder), authMiddleware)
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:

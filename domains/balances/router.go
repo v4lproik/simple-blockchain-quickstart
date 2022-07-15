@@ -14,15 +14,22 @@ type BalancesEnv struct {
 	errorBuilder ErrorBuilder
 }
 
+func NewBalancesEnv(state models.State, builder ErrorBuilder) *BalancesEnv {
+	return &BalancesEnv{
+		state:        state,
+		errorBuilder: builder,
+	}
+}
+
 func BalancesRegister(router *gin.RouterGroup, env *BalancesEnv) {
 	router.POST(LIST_BALANCES_ENDPOINT, env.ListBalances)
 }
 
-func (env BalancesEnv) ListBalances(c *gin.Context) {
+func (env *BalancesEnv) ListBalances(c *gin.Context) {
 	state := env.state
 
 	if len(state.Balances()) == 0 {
-		AbortWithError(c, *env.errorBuilder.New(404, "balances could not be found"))
+		AbortWithError(c, *env.errorBuilder.New(http.StatusNotFound, "balances could not be found"))
 		return
 	}
 
