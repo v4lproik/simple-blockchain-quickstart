@@ -4,11 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"reflect"
 )
 
 type Block struct {
-	Header BlockHeader   // metadata (parent block hash + time)
-	Txs    []Transaction // new transactions only (payload)
+	// metadata (parent block hash + time)
+	Header BlockHeader `json:"header"`
+	// new transactions only (payload)
+	Txs []Transaction `json:"transactions"`
 }
 
 type Hash [32]byte
@@ -29,8 +32,8 @@ type BlockHeader struct {
 }
 
 type BlockDB struct {
-	Key   Hash  `json:"hash"`
-	Value Block `json:"block"`
+	Hash  Hash  `json:"hash"`
+	Block Block `json:"block"`
 }
 
 func NewBlock(parent Hash, height uint64, time uint64, txs []Transaction) Block {
@@ -50,4 +53,8 @@ func (b Block) Hash() (Hash, error) {
 		return Hash{}, err
 	}
 	return sha256.Sum256(blockJson), nil
+}
+
+func CompareBlockHash(h1 Hash, h2 Hash) bool {
+	return reflect.DeepEqual(h1, h2)
 }

@@ -16,7 +16,10 @@ server:
 	./bin/${BINARY} -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
 
 server_hot_reload:
-	./bin/${HOT_RELOAD_BIN} -- -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
+	${HOT_RELOAD_BIN} -- -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
+
+server_hot_reload_2:
+	${HOT_RELOAD_BIN} -- -g ./testdata_2/genesis.json -d ./testdata_2/blocks.db -k ./testdata_2/keystore/ -u ./testdata_2/users.toml -n ./testdata_2/network_nodes.toml -r
 
 dep:
 	go mod download

@@ -1,0 +1,5 @@
+[Users.v4lproik]
+password = "$argon2id$v=19$m=65536,t=3,p=2$FuSUZQ0mrTM9uIpP8qpNUw$nd21jtgUZjJjz078jdlSDKxqajv5paixloGGNgTMJIw"
+
+[Users.cloudvenger]
+password = "$argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQSjURBS6PFttzlksmozz8kuGBCqk"

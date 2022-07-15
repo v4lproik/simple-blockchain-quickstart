@@ -26,7 +26,7 @@ export SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS=""
 export SBQ_IS_AUTHENTICATION_ACTIVATED="true";
 export SBQ_IS_JKMS_ACTIVATED="true";
 export SBQ_DOMAINS_TO_START="AUTH,BALANCES,HEALTHZ,NODES,TRANSACTIONS,WALLETS"
-export SBQ_JWT_KEY_PATH="./database/private.pem";
+export SBQ_JWT_KEY_PATH="./testdata/private.pem";
 export SBQ_JWT_KEY_ID="sbq-auth-key-id";
 export SBQ_JWT_EXPIRES_IN_HOURS="24";
 export SBQ_JWT_DOMAIN="localhost";
@@ -114,7 +114,7 @@ swag init
 JWK authentication is optional, you can activate a verification for each endpoint if necessary. You need to activate it through the environment variable.
 ```
 export SBQ_IS_AUTHENTICATION_ACTIVATED="true";
-export SBQ_JWT_KEY_PATH="./database/private.pem";
+export SBQ_JWT_KEY_PATH="./testdata/private.pem";
 export SBQ_JWT_KEY_ID="sbq-auth-key-id";
 export SBQ_JWT_EXPIRES_IN_HOURS="24";
 export SBQ_JWT_DOMAIN="localhost";

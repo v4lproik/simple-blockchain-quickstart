@@ -12,6 +12,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/jinzhu/copier v0.3.5
 	github.com/pelletier/go-toml/v2 v2.0.1
 	github.com/stretchr/testify v1.7.2
 	github.com/thoas/go-funk v0.9.2

@@ -3,19 +3,20 @@ package transactions
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/simple-blockchain-quickstart/common"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
 
-const BALANCES_DOMAIN_URL = "/api/transactions"
+const TRANSACTIONS_DOMAIN_URL = "/api/transactions"
 
-func RunDomain(r *gin.Engine, stateService services.StateService, transactionService services.TransactionService, middlewares ...gin.HandlerFunc) {
-	v1 := r.Group(BALANCES_DOMAIN_URL)
+func RunDomain(r *gin.Engine, state models.State, transactionService services.TransactionService, middlewares ...gin.HandlerFunc) {
+	v1 := r.Group(TRANSACTIONS_DOMAIN_URL)
 	for _, middleware := range middlewares {
 		v1.Use(middleware)
 	}
 
 	TransactionsRegister(v1.Group("/"), &TransactionsEnv{
-		stateService:       stateService,
+		state:              state,
 		transactionService: transactionService,
 		errorBuilder:       common.NewErrorBuilder(),
 	})

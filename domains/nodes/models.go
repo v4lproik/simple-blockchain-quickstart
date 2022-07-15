@@ -1,16 +1,42 @@
 package nodes
 
-import "github.com/v4lproik/simple-blockchain-quickstart/common/models"
+import (
+	"fmt"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+)
 
-type StatusNode struct {
+type NetworkNodeStatus struct {
 	Hash         models.Hash
-	Number       uint64
-	NetworkNodes []NetworkNode
+	Height       uint64
+	NetworkNodes map[NetworkNodeAddress]NetworkNode
+}
+
+type NetworkNodeAddress struct {
+	ip   string
+	port uint64
+}
+
+func (n NetworkNodeAddress) String() string {
+	return fmt.Sprintf("%s:%d", n.ip, n.port)
+}
+
+func (n NetworkNodeAddress) Ip() string {
+	return n.ip
+}
+
+func (n NetworkNodeAddress) Port() uint64 {
+	return n.port
+}
+
+func NewNetworkNodeAddress(ip string, port uint64) NetworkNodeAddress {
+	return NetworkNodeAddress{
+		ip,
+		port,
+	}
 }
 
 type NetworkNode struct {
-	Ip          string
-	Port        uint64
+	Name        string
 	IsBootstrap bool
 	IsActive    bool
 }
