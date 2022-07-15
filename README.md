@@ -109,7 +109,7 @@ curl localhost:8080/api/balances/ -X POST                                       
 {"balances":[{"account":"0x7b65a12633dbe9a413b17db515732d69e684ebe2","value":998000},{"account":"0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf","value":1003000}]}
 ```
 ### Test data
-In the folder ./databases you can find some data that could be used to test the application.  
+In the folder ```./testdata/node*/``` you can find some data that could be used to test the application.  
 ```
 Username: v4lproik
 Password: P@assword-to-access-api1
