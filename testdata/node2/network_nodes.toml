@@ -1,0 +1,11 @@
+[Nodes.Alpha]
+address = "localhost"
+port=8081
+is_bootstrap=true
+is_active=true
+
+[Nodes.Beta]
+address = "localhost"
+port=8082
+is_bootstrap=true
+is_active=true

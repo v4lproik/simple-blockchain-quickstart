@@ -13,30 +13,7 @@ make dep
 ```
 ### Set env variables  
 ```
-cat config/local.env
-export SBQ_ENV="local"
-export SBQ_SERVER_ADDRESS="localhost"
-export SBQ_SERVER_PORT="8080"
-export SBQ_SERVER_IS_SSL="false"
-export SBQ_SERVER_CERT_FILE=""
-export SBQ_SERVER_KEY_FILE=""
-export SBQ_SERVER_HTTP_CORS_ALLOWED_ORIGINS="http://localhost:8080"
-export SBQ_SERVER_HTTP_CORS_ALLOWED_METHODS="GET,POST"
-export SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS=""
-export SBQ_IS_AUTHENTICATION_ACTIVATED="true";
-export SBQ_IS_JKMS_ACTIVATED="true";
-export SBQ_DOMAINS_TO_START="AUTH,BALANCES,HEALTHZ,NODES,TRANSACTIONS,WALLETS"
-export SBQ_JWT_KEY_PATH="./testdata/private.pem";
-export SBQ_JWT_KEY_ID="sbq-auth-key-id";
-export SBQ_JWT_EXPIRES_IN_HOURS="24";
-export SBQ_JWT_DOMAIN="localhost";
-export SBQ_JWT_AUDIENCE="localhost:8080";
-export SBQ_JWT_ISSUER="sbq-local";
-export SBQ_JWT_ALGO="HS256";
-export SBQ_JWT_JKMS_URL="http://localhost:8080/api/auth/.well-known/jwks.json";
-export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
-export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
-export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
+sh config/local.env
 ```
 ### Building  
 ```
@@ -53,36 +30,26 @@ export PATH=$(go env GOPATH)/bin:$PATH
 ```
 ### Run as client
 ```
-make build && ./simple-blockchain-quickstart -d ./testdata/blocks.db -g ./testdata/genesis.json -k ./testdata/keystore/ -u ./testdata/users.toml transaction list
-go build -o simple-blockchain-quickstart
-1.656521937350836e+09	info	Transactions file: ./testdata/blocks.db
-1.656521937350888e+09	info	Genesis file: ./testdata/genesis.json
-1.656521937350891e+09	info	Users file: ./testdata/users.toml
-1.656521937350893e+09	info	Keystore dir: ./testdata/keystore/
-1.6565219373508952e+09	info	Output: console
-1.6565219373573241e+09	info	#####################
-1.6565219373573499e+09	info	# Accounts balances #
-1.656521937357353e+09	info	#####################
-1.656521937357364e+09	info	State: a03d8c9088049b01b25d468919f827a393772f4bcecaf8795f454338c75b6bb2
-1.656521937357368e+09	info	Height: 8
-1.6565219373573701e+09	info	---------------------
-1.656521937357375e+09	info	0x7b65a12633dbe9a413b17db515732d69e684ebe2: 998000
-1.656521937357379e+09	info	0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf: 1003000
-1.6565219373573818e+09	info	---------------------
-```
-### Run as node
-```
-./simple-blockchain-quickstart -g ./testdata/genesis.json -d ./testdata/blocks.db -r
-1.6558218035227594e+09  info    Transactions file: ./testdata/blocks.db
-1.6558218035228403e+09  info    Genesis file: ./testdata/genesis.json
-1.6558218035228572e+09  info    Output: console
+make build && ./bin/simple-blockchain-quickstart -d ./testdata/node1/blocks.db -g ./testdata/node1/genesis.json -k ./testdata/node1/keystore/ -u ./testdata/node1/users.toml -n ./testdata/node1/network_nodes.toml -r 19:51:41
+go build -o ./bin/simple-blockchain-quickstart
+1.657907504219829e+09	info	Transactions file: ./testdata/node1/blocks.db
+1.6579075042198799e+09	info	Genesis file: ./testdata/node1/genesis.json
+1.657907504219883e+09	info	Users file: ./testdata/node1/users.toml
+1.657907504219885e+09	info	Nodes file: ./testdata/node1/network_nodes.toml
+1.657907504219887e+09	info	Keystore dir: ./testdata/node1/keystore/
+1.657907504219889e+09	info	Output: console
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:   export GIN_MODE=release
- - using code:  gin.SetMode(gin.ReleaseMode)
+- using env:	export GIN_MODE=release
+- using code:	gin.SetMode(gin.ReleaseMode)
 
+[GIN-debug] POST   /api/auth/login           --> github.com/v4lproik/simple-blockchain-quickstart/domains/auth.AuthEnv.Login-fm (5 handlers)
+[GIN-debug] GET    /api/auth/.well-known/jwks.json --> github.com/v4lproik/gin-jwks-rsa.Jkws.func1 (5 handlers)
+[GIN-debug] POST   /api/balances/            --> github.com/v4lproik/simple-blockchain-quickstart/domains/balances.(*BalancesEnv).ListBalances-fm (6 handlers)
 [GIN-debug] GET    /api/healthz              --> github.com/v4lproik/simple-blockchain-quickstart/domains/healthz.RunDomain.func1 (5 handlers)
-1.6558218035261767e+09  info    start server without tls
-[GIN-debug] Listening and serving HTTP on 127.0.0.1:8080
+[GIN-debug] GET    /api/nodes/status         --> github.com/v4lproik/simple-blockchain-quickstart/domains/nodes.NodesEnv.NodeStatus-fm (5 handlers)
+[GIN-debug] POST   /api/nodes/blocks         --> github.com/v4lproik/simple-blockchain-quickstart/domains/nodes.NodesEnv.NodeListBlocks-fm (5 handlers)
+[GIN-debug] PUT    /api/transactions/        --> github.com/v4lproik/simple-blockchain-quickstart/domains/transactions.TransactionsEnv.AddTransaction-fm (6 handlers)
+[GIN-debug] PUT    /api/wallets/             --> github.com/v4lproik/simple-blockchain-quickstart/domains/wallets.(*WalletsEnv).CreateWallet-fm (6 handlers)
 ```
 ### Run in container
 The docker image has been built so the mandatory options are passed in an env file. The extra options are passed through the variable ```cmd```.
@@ -114,7 +81,7 @@ swag init
 JWK authentication is optional, you can activate a verification for each endpoint if necessary. You need to activate it through the environment variable.
 ```
 export SBQ_IS_AUTHENTICATION_ACTIVATED="true";
-export SBQ_JWT_KEY_PATH="./testdata/private.pem";
+export SBQ_JWT_KEY_PATH="./testdata/node1/private.pem";
 export SBQ_JWT_KEY_ID="sbq-auth-key-id";
 export SBQ_JWT_EXPIRES_IN_HOURS="24";
 export SBQ_JWT_DOMAIN="localhost";
@@ -130,7 +97,7 @@ export SBQ_JWT_JKMS_REFRESH_CACHE_INTERVAL_IN_MIN="1";
 export SBQ_JWT_JKMS_REFRESH_CACHE_RATE_LIMIT_IN_MIN="1000";
 export SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC="1";
 ```
-The users are declared in ```./testdata/users.toml```. See the Test data section for the test accounts.
+The users are declared in ```./testdata/node1/users.toml```. See the Test data section for the test accounts.
 ```
 curl localhost:8080/api/balances/ -X POST                                                                                                                          15:03:11
 {"error":{"code":401,"status":"Unauthorized","message":"authentication token cannot be found","context":[]}}
@@ -150,7 +117,7 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$FuSUZQ0mrTM9uIpP8qpNUw$nd21jtgUZjJjz078
 
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore1
-Keystore: testdata/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
+Keystore: testdata/node1/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
 ```
 ```
 Username: cloudvenger
@@ -159,5 +126,5 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQ
 
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore2
-Keystore: testdata/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
+Keystore: testdata/node1/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
 ```
