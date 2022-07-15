@@ -75,7 +75,6 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	}
 
 	//render
-	log.S().Infof("router %w", blocks)
 	serializer := BlocksSerializer{
 		blocks: blocks,
 	}

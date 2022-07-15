@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	copy "github.com/barkimedes/go-deepcopy"
+	"github.com/jinzhu/copier"
 	log "go.uber.org/zap"
 	"io/ioutil"
 	"os"
@@ -143,11 +143,13 @@ func (s *FromFileState) AddBlock(block Block) error {
 
 	// TODO: create benchmark
 	// our state is a pointer so we need to copy its value
-	copiedState, err := copy.Anything(*s)
+	var copiedStateFromFile FromFileState
+	err := copier.CopyWithOption(&copiedStateFromFile, s, copier.Option{DeepCopy: true})
 	if err != nil {
 		return fmt.Errorf("AddBlock: cannot copy the state: %w", err)
 	}
-	copiedStateFromFile := copiedState.(FromFileState)
+	log.S().Debugf("this %d", s.latestBlock.Header.Height)
+	log.S().Debugf("copy %d", copiedStateFromFile.latestBlock.Header.Height)
 
 	// validate the block
 	err = copiedStateFromFile.applyBlock(block)
@@ -183,7 +185,10 @@ func (s *FromFileState) AddBlock(block Block) error {
 
 func (s *FromFileState) AddBlocks(blocks []Block) error {
 	for _, block := range blocks {
-		return s.AddBlock(block)
+		err := s.AddBlock(block)
+		if err != nil {
+			return fmt.Errorf("AddBlocks: %w", err)
+		}
 	}
 	return nil
 }
@@ -239,10 +244,12 @@ func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 // also checks if the blocks which is trying to be added has previousBlock (or parentBlock)
 // is block.height == previousBlock.height + 1 and that its previousBlock.parentHash points to block.hash
 func (s *FromFileState) applyBlock(block Block) error {
+	log.S().Debugf("%d == %d", block.Header.Height, s.latestBlock.Header.Height+1)
 	if block.Header.Height != s.latestBlock.Header.Height+1 {
 		return fmt.Errorf("applyBlock: %w", ErrNextBlockHeight)
 	}
 
+	log.S().Debugf("s.latestBlockHash %s == block.Header.Parent %s", s.latestBlockHash, block.Header.Parent)
 	if !CompareBlockHash(s.latestBlockHash, block.Header.Parent) {
 		return fmt.Errorf("applyBlock: %w", ErrNextBlockHash)
 	}

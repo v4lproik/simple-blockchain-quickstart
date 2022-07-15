@@ -8,8 +8,10 @@ import (
 )
 
 type Block struct {
-	Header BlockHeader   // metadata (parent block hash + time)
-	Txs    []Transaction // new transactions only (payload)
+	// metadata (parent block hash + time)
+	Header BlockHeader `json:"header"`
+	// new transactions only (payload)
+	Txs []Transaction `json:"transactions"`
 }
 
 type Hash [32]byte

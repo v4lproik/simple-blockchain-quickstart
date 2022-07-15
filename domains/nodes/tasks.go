@@ -64,19 +64,15 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 	}
 
 	if len(knownNetworkNodes) == 0 {
-		log.S().Debugf("no network nodes found... no sync...")
+		log.S().Debugf("getOtherNodesViaNodeStatus: no network nodes found... no sync...")
 	}
 
 	state := n.state
-	if err != nil {
-		return fmt.Errorf("couldn't retrieve blockchain state %v", err)
-	}
-
 	for address, _ := range knownNetworkNodes {
-		log.S().Errorf("trying to get node status %s", address.String())
+		log.S().Errorf("getOtherNodesViaNodeStatus: trying to get node status %s", address.String())
 		status, err := getNodeStatus(address)
 		if err != nil {
-			log.S().Errorf("unable to get node %s status %v", address.String(), err)
+			log.S().Errorf("getOtherNodesViaNodeStatus: unable to get node %s status %v", address.String(), err)
 			continue
 		}
 		currentHeight := state.GetLatestBlockHeight()
@@ -84,7 +80,7 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 			missingBlockCount := status.Height - currentHeight
 			currentHash := state.GetLatestBlockHash()
 
-			log.S().Debugf("new blocks (%d) needs to be added", missingBlockCount)
+			log.S().Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
 			//sync database from that node
 			// get the blocks from other node
 			blocks, err := getNextNodeBlocksFromHash(address, currentHash)
@@ -93,7 +89,8 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 			}
 
 			// insert the new block into our own database
-			_ = state.AddBlocks(blocks)
+			err = state.AddBlocks(blocks)
+			log.S().Error(err)
 		}
 
 		for networkNodeIp, newNode := range status.NetworkNodes {
