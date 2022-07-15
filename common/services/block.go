@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"io"
 	"os"
+	"sync"
 )
 
 type BlockService interface {
@@ -13,6 +15,7 @@ type BlockService interface {
 }
 
 type FileBlockService struct {
+	mu sync.Mutex
 	db *os.File
 }
 
@@ -27,6 +30,8 @@ func NewFileBlockService(transactionFilePath string) (*FileBlockService, error) 
 }
 
 func (a *FileBlockService) GetNextBlocksFromHash(from models.Hash) ([]models.Block, error) {
+	a.mu.Lock()
+
 	blocks := make([]models.Block, 0)
 	hasFoundHash := false
 
@@ -34,7 +39,7 @@ func (a *FileBlockService) GetNextBlocksFromHash(from models.Hash) ([]models.Blo
 	scanner := bufio.NewScanner(a.db)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
-			return blocks, err
+			return blocks, fmt.Errorf("GetNextBlocksFromHash: error while scanning: %w", err)
 		}
 
 		blockFsJson := scanner.Bytes()
@@ -53,6 +58,13 @@ func (a *FileBlockService) GetNextBlocksFromHash(from models.Hash) ([]models.Blo
 			hasFoundHash = true
 		}
 	}
+
+	_, err := a.db.Seek(0, io.SeekStart)
+	if err != nil {
+		return blocks, fmt.Errorf("GetNextBlocksFromHash: couldn't reset pointer on dbfile: %w", err)
+	}
+
+	a.mu.Unlock()
 
 	return blocks, nil
 }

@@ -37,7 +37,6 @@ type (
 		Close() error
 		GetLatestBlockHash() Hash
 		GetLatestBlockHeight() uint64
-		//HasGenesisBlock() bool
 		Print()
 	}
 )
@@ -148,7 +147,7 @@ func (s *FromFileState) AddBlock(block Block) error {
 	if err != nil {
 		return fmt.Errorf("AddBlock: cannot copy the state: %w", err)
 	}
-	copiedStateFromFile := copiedState.(*FromFileState)
+	copiedStateFromFile := copiedState.(FromFileState)
 
 	// validate the block
 	err = copiedStateFromFile.applyBlock(block)
