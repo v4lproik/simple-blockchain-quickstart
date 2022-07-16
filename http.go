@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/caarlos0/env/v6"
+	parser "github.com/caarlos0/env/v6"
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
@@ -37,13 +37,17 @@ var (
 )
 
 func runHttpServer() {
-	if err := env.Parse(&apiConf); err != nil {
+	if err := parser.Parse(&apiConf); err != nil {
 		Logger.Fatal(err)
 	}
 
 	//init router
 	serverCorsOpts := apiConf.Server.HttpCors
+	if env.isProd() {
+		gin.SetMode("release")
+	}
 	r := gin.New()
+	r.SetTrustedProxies(nil)
 	r.Use(cors.New(cors.Config{
 		AllowMethods:  serverCorsOpts.AllowedMethods,
 		AllowHeaders:  serverCorsOpts.AllowedHeaders,
@@ -62,7 +66,7 @@ func runHttpServer() {
 	//start the functional domains
 	bindFunctionalDomains(r)
 
-	//start server according to the configuration passed in parameter or env variables
+	//start server according to the configuration passed in parameter or EnvVal variables
 	serverOpts := apiConf.Server.Options
 	serverPort := apiConf.Server.Port
 	serverAddress := apiConf.Server.Address

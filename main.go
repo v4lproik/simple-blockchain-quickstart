@@ -6,6 +6,8 @@ import (
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
+var env EnvVal
+
 // @title Simple Blockchain Quickstart
 // @version 1.0
 // @description About
@@ -25,8 +27,11 @@ func main() {
 		panic(err)
 	}
 
+	//check environment
+	checkArgs()
+
 	//init Logger
-	Logger.InitLogger(opts.LogFilePath)
+	Logger.InitLogger(env.isProd(), opts.LogFilePath)
 	defer Logger.Sync()
 
 	//display program configuration

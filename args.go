@@ -6,7 +6,32 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
+	"os"
 )
+
+type EnvVal string
+
+const (
+	Dev  = "dev"
+	Prod = "prod"
+)
+
+func (e EnvVal) isValid() bool {
+	switch e {
+	case Dev:
+		return true
+	case Prod:
+		return true
+	}
+	return false
+}
+
+func (e EnvVal) isProd() bool {
+	if e == Prod {
+		return true
+	}
+	return false
+}
 
 var opts struct {
 	RunAsHttpserver      bool   `short:"r" long:"run_as_http_server" description:"Run the application as an http server" required:"false"`
@@ -15,10 +40,12 @@ var opts struct {
 	TransactionsFilePath string `short:"d" long:"transactions_file_path" description:"Transactions file path" required:"true"`
 	NodesFilePath        string `short:"n" long:"nodes_file_path" description:"Nodes file path" required:"true"`
 	KeystoreDirPath      string `short:"k" long:"keystore_dir_path" description:"Keystore dir path" required:"true"`
-	LogFilePath          string `short:"l" long:"log_file_path" description:"Where application logs will be written. If this value is not specified, the logs will be displayed to the console." required:"false"`
+	LogFilePath          string `short:"l" long:"log_file_path" description:"Where application logs will be written. If this value is not specified, the logs will be displayed to the console" required:"false"`
+	Environment          string `short:"e" long:"environment" description:"Set the environment variable. Accepted values are [dev, prod]" required:"false" default:"dev"`
 }
 
 func displayAppConfiguration() {
+	Logger.Infof("Environment: %s", opts.Environment)
 	Logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
 	Logger.Infof("Genesis file: %s", opts.GenesisFilePath)
 	Logger.Infof("Users file: %s", opts.UsersFilePath)
@@ -28,6 +55,14 @@ func displayAppConfiguration() {
 		Logger.Infof("Output in log file: %s", opts.LogFilePath)
 	} else {
 		Logger.Infof("Output: console")
+	}
+}
+
+func checkArgs() {
+	env = EnvVal(opts.Environment)
+	if !env.isValid() {
+		fmt.Println("environment " + opts.Environment + " is not accepted. Choose from [dev, prod]. Exiting")
+		os.Exit(1)
 	}
 }
 

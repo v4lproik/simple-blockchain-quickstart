@@ -12,12 +12,16 @@ var (
 	logger          *zap.SugaredLogger
 )
 
-func InitLogger(logFilePath string) {
+func InitLogger(isProd bool, logFilePath string) {
 	loggerSafeGuard.Do(func() {
 		writerSyncer := getLogWriter(logFilePath)
 		encoder := getEncoder(logFilePath)
 
-		core := zapcore.NewCore(encoder, writerSyncer, zapcore.DebugLevel)
+		logLvl := zapcore.DebugLevel
+		if isProd {
+			logLvl = zapcore.InfoLevel
+		}
+		core := zapcore.NewCore(encoder, writerSyncer, logLvl)
 
 		zapLogger := zap.New(core)
 		logger = zapLogger.Sugar()
@@ -29,43 +33,43 @@ func InitLogger(logFilePath string) {
 }
 
 func Debug(args ...interface{}) {
-	logger.Debug(args)
+	logger.Debug(args...)
 }
 
 func Debugf(format string, args ...interface{}) {
-	logger.Debugf(format, args)
+	logger.Debugf(format, args...)
 }
 
 func Info(args ...interface{}) {
-	logger.Info(args)
+	logger.Info(args...)
 }
 
 func Infof(format string, args ...interface{}) {
-	logger.Infof(format, args)
+	logger.Infof(format, args...)
 }
 
 func Error(args ...interface{}) {
-	logger.Info(args)
+	logger.Info(args...)
 }
 
 func Errorf(format string, args ...interface{}) {
-	logger.Errorf(format, args)
+	logger.Errorf(format, args...)
 }
 
 func Panic(args ...interface{}) {
-	logger.Panic(args)
+	logger.Panic(args...)
 }
 
 func Panicf(format string, args ...interface{}) {
-	logger.Panicf(format, args)
+	logger.Panicf(format, args...)
 }
 
 func Fatal(args ...interface{}) {
-	logger.Fatal(args)
+	logger.Fatal(args...)
 }
 
 func Fatalf(format string, args ...interface{}) {
-	logger.Fatalf(format, args)
+	logger.Fatalf(format, args...)
 }
 
 func Desugar() *zap.Logger {
