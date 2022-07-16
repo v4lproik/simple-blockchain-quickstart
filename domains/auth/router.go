@@ -30,7 +30,7 @@ func AuthRegister(router *gin.RouterGroup, env *AuthEnv) {
 		WithPath(env.jwtService.PrivateKeyPath()).
 		Build()
 	if err != nil {
-		Logger.Fatalf("cannot start jwks service %v", err)
+		Logger.Fatalf("AuthRegister: cannot start jwks service: %w", err)
 	}
 	router.GET(JWKS_ENDPOINT, gin_jwks_rsa.Jkws(*jwksConf))
 }

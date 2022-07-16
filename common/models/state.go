@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	ErrNextBlockHeight = errors.New("latest block height doesn't match with next block (height + 1)")
-	ErrNextBlockHash   = errors.New("latest block hash doesn't match with next block")
+	ErrInsufficientBalance = errors.New("insufficient balance")
+	ErrNextBlockHeight     = errors.New("latest block height doesn't match with next block (height + 1)")
+	ErrNextBlockHash       = errors.New("latest block hash doesn't match with next block")
 )
 
 type GenesisFile struct {
@@ -53,21 +54,21 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*From
 	//read genesis file
 	file, err := ioutil.ReadFile(genesisFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("NewStateFromFile: failed to read file: %w", err)
 	}
 
 	//extract genesis file information into struct
 	data := GenesisFile{}
 	err = json.Unmarshal([]byte(file), &data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("NewStateFromFile: failed to unmarshall state: %w", err)
 	}
 
 	balances := make(map[Account]uint)
 	for account, balance := range data.Balances {
 		acc, err := NewAccount(account)
 		if err != nil {
-			return nil, fmt.Errorf("error building state from file %v", err)
+			return nil, fmt.Errorf("NewStateFromFile: invalid account: %w", err)
 		}
 		balances[acc] = balance
 	}
@@ -75,12 +76,12 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*From
 	//read transactions database
 	db, err := getTransactionsDb(transactionFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("NewStateFromFile: failed to get txs database: %w", err)
 	}
 
 	state, err := getFileStateFromFile(balances, db)
 	if err != nil {
-		return state, err
+		return nil, fmt.Errorf("NewStateFromFile: failed to intialise state: %w", err)
 	}
 	return state, nil
 }
@@ -92,14 +93,14 @@ func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileStat
 	scanner := bufio.NewScanner(db)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("getFileStateFromFile: failed at reading line: %w", err)
 		}
 
 		blockFsJson := scanner.Bytes()
 		var blockDB BlockDB
 		err := json.Unmarshal(blockFsJson, &blockDB)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("getFileStateFromFile: failed to unmarshal: %w", err)
 		}
 
 		// we do not call applyBlocks here
@@ -107,7 +108,7 @@ func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileStat
 		// safe not to apply any business logic on the blocks themselves
 		err = state.applyTxs(blockDB.Block.Txs)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("getFileStateFromFile: failed to applyTxs: %w", err)
 		}
 
 		//keep a copy of the latest block and its hash,
@@ -146,7 +147,7 @@ func (s *FromFileState) AddBlock(block Block) error {
 	var copiedStateFromFile FromFileState
 	err := copier.CopyWithOption(&copiedStateFromFile, s, copier.Option{DeepCopy: true})
 	if err != nil {
-		return fmt.Errorf("AddBlock: cannot copy the state: %w", err)
+		return fmt.Errorf("AddBlock: failed to copy the state: %w", err)
 	}
 	Logger.Debugf("this %d", s.latestBlock.Header.Height)
 	Logger.Debugf("copy %d", copiedStateFromFile.latestBlock.Header.Height)
@@ -154,13 +155,13 @@ func (s *FromFileState) AddBlock(block Block) error {
 	// validate the block
 	err = copiedStateFromFile.applyBlock(block)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddBlock: failed to apply the block: %w", err)
 	}
 
 	// create a blockFS, ready to be added to the state
 	blockHash, err := block.Hash()
 	if err != nil {
-		return err
+		return fmt.Errorf("AddBlock: failed to get block hash: %w", err)
 	}
 
 	blockDB := BlockDB{
@@ -169,7 +170,7 @@ func (s *FromFileState) AddBlock(block Block) error {
 	}
 	err = s.persistBlockToDB(blockDB)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddBlock: failed to persist the block: %w", err)
 	}
 
 	// now the blocks have been written in the DB
@@ -206,14 +207,14 @@ func (s *FromFileState) Persist() (Hash, error) {
 	//generate block hash
 	blockHash, err := block.Hash()
 	if err != nil {
-		return hash, err
+		return hash, fmt.Errorf("Persist: failed to get block hash: %w", err)
 	}
 
 	//create database block which includes its hash and the transactions (block itself)
 	blockDB := BlockDB{blockHash, block}
 	err = s.persistBlockToDB(blockDB)
 	if err != nil {
-		return blockHash, err
+		return blockHash, fmt.Errorf("Persist: failed to persist the block: %w", err)
 	}
 
 	//latest block of the state is now the hash of the latest block inserted into the database
@@ -229,13 +230,13 @@ func (s *FromFileState) Persist() (Hash, error) {
 func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 	blockDBJson, err := json.Marshal(block)
 	if err != nil {
-		return err
+		return fmt.Errorf("Persist: failed to marshall the block: %w", err)
 	}
 
 	//add to the DB the new block as well as a new line
 	_, err = s.dbFile.Write(append(blockDBJson, '\n'))
 	if err != nil {
-		return err
+		return fmt.Errorf("Persist: failed to append block to file: %w", err)
 	}
 	return nil
 }
@@ -273,13 +274,13 @@ func (s *FromFileState) applyTx(tx Transaction) error {
 	if tx.Reason == SELF_REWARD {
 		//refuse the transaction if it's a self reward with different from/to address
 		if !tx.To.isSameAccount(tx.From) {
-			return fmt.Errorf("from and to accounts should be the same as self-reward as been specified as a reason for the transaction")
+			return errors.New("applyTx: to!=from accounts not allowed with self-reward reason")
 		}
 		s.balances[tx.To] += tx.Value
 		return nil
 	}
 	if tx.Value > s.balances[tx.From] {
-		return fmt.Errorf("insufficient balance")
+		return fmt.Errorf("applyTx: %w", ErrInsufficientBalance)
 	}
 	s.balances[tx.From] -= tx.Value
 	s.balances[tx.To] += tx.Value

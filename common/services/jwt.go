@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
@@ -27,13 +28,13 @@ func NewVerifyingConf(jwksUrl string, jkmsRefreshCacheIntervalInMin int, jkmsRef
 	return VerifyingConf{jwksUrl: jwksUrl, jkmsRefreshCacheIntervalInMin: jkmsRefreshCacheIntervalInMin, jkmsRefreshCacheRateLimitInMin: jkmsRefreshCacheRateLimitInMin, jkmsRefreshCacheTimeoutInSec: jkmsRefreshCacheTimeoutInSec}
 }
 
-func checkVerifyingConfOrError(conf VerifyingConf) error {
+func checkVerifyingConf(conf VerifyingConf) error {
 	if conf.jkmsRefreshCacheIntervalInMin == 0 {
-		return fmt.Errorf("refresh cache interval in minute cannot be equal to 0")
+		return errors.New("checkVerifyingConf: refresh cache interval in minute cannot be equal to 0")
 	}
 
 	if conf.jkmsRefreshCacheTimeoutInSec == 0 {
-		return fmt.Errorf("refresh cache timeout in second cannot be equal to 0")
+		return errors.New("checkVerifyingConf: refresh cache timeout in second cannot be equal to 0")
 	}
 	return nil
 }
@@ -52,16 +53,16 @@ func NewSigningConf(algo string, audience string, domain string, expiresInHours 
 	return SigningConf{algo: algo, audience: audience, domain: domain, expiresInHours: expiresInHours, issuer: issuer, privateKeyPath: privateKeyPath, privateKeyId: privateKeyId}
 }
 
-func checkSigningConfOrError(conf SigningConf) error {
+func checkSigningConf(conf SigningConf) error {
 	algo := conf.algo
 	if !funk.Contains(ALLOWED_ALGORITHMS, algo) {
-		return fmt.Errorf("jwt algo %v is not allowed", algo)
+		return errors.New("checkSigningConf: jwt algo " + algo + " is not allowed")
 	}
 
 	privateKeyPath := conf.privateKeyPath
 	_, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
-		return fmt.Errorf("private key cannot be opened %v", err)
+		return fmt.Errorf("checkSigningConf: failed to read private key: %w", err)
 	}
 
 	return nil
@@ -76,14 +77,14 @@ type JwtService struct {
 
 func NewJwtService(verifyingConf VerifyingConf, signingConf SigningConf) (*JwtService, error) {
 	// check the configurations for signing and verifying
-	err := checkSigningConfOrError(signingConf)
+	err := checkSigningConf(signingConf)
 	if err != nil {
-		return nil, fmt.Errorf("error with signing conf %v", err)
+		return nil, fmt.Errorf("NewJwtService: invalid signing configuration: %w", err)
 	}
 
-	err = checkVerifyingConfOrError(verifyingConf)
+	err = checkVerifyingConf(verifyingConf)
 	if err != nil {
-		return nil, fmt.Errorf("error with verifying conf %v", err)
+		return nil, fmt.Errorf("NewJwtService: invalid verifying configuration: %w", err)
 	}
 
 	// get the private key
@@ -92,7 +93,7 @@ func NewJwtService(verifyingConf VerifyingConf, signingConf SigningConf) (*JwtSe
 
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
-		return nil, fmt.Errorf("private key cannot be parsed %v", err)
+		return nil, fmt.Errorf("NewJwtService: failed at parsing private key: %w", err)
 	}
 
 	return &JwtService{
@@ -106,12 +107,13 @@ func NewJwtService(verifyingConf VerifyingConf, signingConf SigningConf) (*JwtSe
 // SignToken Sign token with private key passed at the initialisation of the service
 // including the payload passed as content parameter
 func (j *JwtService) SignToken(content interface{}) (string, error) {
+	var signedToken string
 	signingConf := j.signingConf
 	now := time.Now().UTC()
 
 	payload, err := json.Marshal(content)
 	if err != nil {
-		return "", fmt.Errorf("error marshalling content %v", err)
+		return signedToken, fmt.Errorf("SignToken: failed at marshaling payload: %w", err)
 	}
 
 	claims := make(jwt.MapClaims)
@@ -129,9 +131,9 @@ func (j *JwtService) SignToken(content interface{}) (string, error) {
 	token := jwt.NewWithClaims(signingMethod, claims)
 	token.Header["kid"] = signingConf.privateKeyId
 
-	signedToken, err := token.SignedString(j.privateKey)
+	signedToken, err = token.SignedString(j.privateKey)
 	if err != nil {
-		return "", fmt.Errorf("error signing the jwt token %v", err)
+		return signedToken, fmt.Errorf("SignToken: failed to sign the token: %w", err)
 	}
 
 	return signedToken, nil
@@ -144,14 +146,14 @@ func (j *JwtService) VerifyToken(signedToken string) (jwt.Token, error) {
 	if j.jwksClient == nil {
 		err := j.getJwksClient()
 		if err != nil {
-			return jwt.Token{}, fmt.Errorf("getting jkms %v", err)
+			return jwt.Token{}, fmt.Errorf("VerifyToken: failed to get jwks client: %w", err)
 		}
 	}
 
 	//parse token and validate it (eg is expired?)
 	token, err := jwt.Parse(signedToken, j.jwksClient.Keyfunc)
 	if err != nil {
-		return jwt.Token{}, fmt.Errorf("parsing error %v", err)
+		return jwt.Token{}, fmt.Errorf("VerifyToken: failed to parse token: %w", err)
 	}
 	return *token, nil
 }
@@ -173,14 +175,14 @@ func (j *JwtService) getJwksClient() error {
 		RefreshTimeout:   time.Second * time.Duration(j.verifyingConf.jkmsRefreshCacheTimeoutInSec),
 		RefreshRateLimit: time.Second * time.Duration(j.verifyingConf.jkmsRefreshCacheTimeoutInSec),
 		RefreshErrorHandler: func(err error) {
-			Logger.Errorf("couldn't reach the jwks url %v", err.Error())
+			Logger.Errorf("jwks client cannot reach the jwks service: %s", err)
 		},
 	}
 
 	// create the JWKS from the resource at the given URL.
 	j.jwksClient, err = keyfunc.Get(j.verifyingConf.jwksUrl, options)
 	if err != nil {
-		return fmt.Errorf("error initiating jwks client %v", err)
+		return fmt.Errorf("getJwksClient: failed to initiate jwks client: %w", err)
 	}
 
 	return nil

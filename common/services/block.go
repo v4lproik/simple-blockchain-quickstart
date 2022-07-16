@@ -22,7 +22,7 @@ type FileBlockService struct {
 func NewFileBlockService(transactionFilePath string) (*FileBlockService, error) {
 	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
-		return nil, fmt.Errorf("cannot open transaction file path")
+		return nil, fmt.Errorf("NewFileBlockService: cannot open txs database: %w", err)
 	}
 	return &FileBlockService{
 		db: db,

@@ -70,12 +70,12 @@ func checkArgs() {
 func addCommands(parser *flags.Parser) error {
 	err := addTransactionCommands(parser)
 	if err != nil {
-		return fmt.Errorf("cannot add transaction commands %v", err)
+		return fmt.Errorf("addCommands: cannot add transaction commands %s", err)
 	}
 
 	err = addPasswordCommands(parser)
 	if err != nil {
-		return fmt.Errorf("cannot add password commands %v", err)
+		return fmt.Errorf("addCommands: cannot add password commands %s", err)
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func addCommands(parser *flags.Parser) error {
 func addTransactionCommands(parser *flags.Parser) error {
 	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
 	if err != nil {
-		Logger.Fatalf("addTransactionCommands: %w", err)
+		return fmt.Errorf("addTransactionCommands: %w", err)
 	}
 
 	addT, _ := commands.NewAddTransactionCommand(state)

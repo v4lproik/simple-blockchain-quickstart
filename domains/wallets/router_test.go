@@ -71,7 +71,7 @@ var CreateWalletsDomainTests = []struct {
 		method:         "PUT",
 		bodyData:       func() ([]byte, error) { return json.Marshal(CreateWalletParams{Password: "P@assword123!"}) },
 		expectedCode:   http.StatusInternalServerError,
-		jsonResponse:   `{"error":{"code":500,"status":"Internal Server Error","message":"cannot generate a new wallet account","context":["cannot generate private key"]}}`,
+		jsonResponse:   `{"error":{"code":500,"status":"Internal Server Error","message":"wallet cannot be created","context":["cannot generate private key"]}}`,
 		validationFunc: test.StandardHttpValidationFunc,
 		msg:            "request creation wallet with error generating account should return error",
 		after:          func(req *http.Request) {},

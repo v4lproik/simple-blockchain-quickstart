@@ -40,13 +40,13 @@ func (u *NodeService) List() (map[NetworkNodeAddress]NetworkNode, error) {
 
 	file, err := ioutil.ReadFile(u.nodeDatabasePath)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load toml file %v", err)
+		return nil, fmt.Errorf("List: failed to open node database: %w", err)
 	}
 
 	var networkNodes NetworkNodeFromDB
 	err = toml.Unmarshal(file, &networkNodes)
 	if err != nil {
-		return nil, fmt.Errorf("network nodes couldn't be extracted %v", err)
+		return nil, fmt.Errorf("List: failed to unmarshal nodes: %w", err)
 	}
 
 	nodesNb := len(networkNodes.Nodes)
@@ -81,12 +81,12 @@ func (u *NodeService) Add(nodes map[NetworkNodeAddress]NetworkNode) error {
 	nodesToInsert := NetworkNodeFromDB{mapToInsert}
 	byteNodes, err := toml.Marshal(&nodesToInsert)
 	if err != nil {
-		return fmt.Errorf("network nodes couldn't be marshalled %v", err)
+		return fmt.Errorf("Add: failed to marshal node: %w", err)
 	}
 
 	err = os.WriteFile(u.nodeDatabasePath, byteNodes, 0644)
 	if err != nil {
-		return fmt.Errorf("cannot write in file %v", err)
+		return fmt.Errorf("Add: failed to write node in database: %w", err)
 	}
 
 	return nil

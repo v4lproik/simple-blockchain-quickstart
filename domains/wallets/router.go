@@ -25,16 +25,18 @@ type CreateWalletParams struct {
 
 func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 	params := &CreateWalletParams{}
+	errMsg := "wallet cannot be created"
+
 	//check params
-	if err := ShouldBind(c, env.ErrorBuilder, "wallet cannot be created", params); err != nil {
+	if err := ShouldBind(c, env.ErrorBuilder, errMsg, params); err != nil {
 		AbortWithError(c, *err)
 		return
 	}
 
 	acc, err := env.Keystore.NewKeystoreAccount(params.Password)
 	if err != nil {
-		Logger.Errorf("cannot generate a new wallet account %v", err)
-		AbortWithError(c, *env.ErrorBuilder.New(http.StatusInternalServerError, "cannot generate a new wallet account", err))
+		Logger.Errorf("CreateWallet: failed to generate a new wallet account: %s", err)
+		AbortWithError(c, *env.ErrorBuilder.New(http.StatusInternalServerError, errMsg, err))
 		return
 	}
 

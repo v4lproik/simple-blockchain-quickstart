@@ -26,7 +26,7 @@ func NewHashAPasswordCommand() *HashAPasswordCommand {
 func (c *HashAPasswordCommand) Execute(args []string) error {
 	hash, err := c.passwordService.GenerateHash(c.Password)
 	if err != nil {
-		return fmt.Errorf("cannot generate a hash %v", err)
+		return fmt.Errorf("Execute: cannot generate a hash: %w", err)
 	}
 	Logger.Infof("hash: %s", hash)
 	return nil
@@ -47,12 +47,12 @@ func NewCompareHashCommand() *CompareHashCommand {
 func (c *CompareHashCommand) Execute(args []string) error {
 	hash, err := base64.StdEncoding.DecodeString(c.Hash)
 	if err != nil {
-		return fmt.Errorf("bad base64 representation of the hash %v", err)
+		return fmt.Errorf("Execute: error decoding base64 hash: %w", err)
 	}
 
 	isPassword, err := c.passwordService.ComparePasswordAndHash(c.Password, string(hash))
 	if err != nil {
-		return fmt.Errorf("cannot compare password to hash %v", err)
+		return fmt.Errorf("Execute: error comparing hashes: %w", err)
 	}
 	verb := "do not"
 	if isPassword {

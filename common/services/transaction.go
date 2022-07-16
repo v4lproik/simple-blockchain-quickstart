@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
@@ -18,23 +19,23 @@ func NewFileTransactionService() FileTransactionService {
 
 func (a FileTransactionService) AddTransaction(state models.State, tx *models.Transaction) (*models.Hash, error) {
 	if state == nil {
-		return nil, fmt.Errorf("cannot add transaction to a nil state")
+		return nil, errors.New("AddTransaction: nil state")
 	}
 
 	if tx == nil {
-		return nil, fmt.Errorf("cannot add transaction with a nil transaction")
+		return nil, errors.New("AddTransaction: nil transaction")
 	}
 
 	//add transaction to state
 	err := state.Add(*tx)
 	if err != nil {
-		return nil, fmt.Errorf("cannot add transaction to state: %v", err)
+		return nil, fmt.Errorf("AddTransaction: failed to add tx: %s", err)
 	}
 
 	//persist new state to disk
 	hash, err := state.Persist()
 	if err != nil {
-		return nil, fmt.Errorf("cannot persist state to disk: %v", err)
+		return nil, fmt.Errorf("AddTransaction: failed to persist state: %s", err)
 	}
 
 	return &hash, nil

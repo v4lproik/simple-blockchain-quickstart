@@ -77,19 +77,19 @@ func (v ValidatorService) AddValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		err := v.RegisterValidation("enum", ValidateEnum)
 		if err != nil {
-			Logger.Fatalf("custom validator enum cannot be registered %v", err)
+			Logger.Fatalf("AddValidators: custom validator enum cannot be registered: %w", err)
 		}
 		err = v.RegisterValidation("password", ValidatePassword)
 		if err != nil {
-			Logger.Fatalf("custom validator password cannot be registered %v", err)
+			Logger.Fatalf("AddValidators: custom validator password cannot be registered: %w", err)
 		}
 		err = v.RegisterValidation("account", ValidateAccount)
 		if err != nil {
-			Logger.Fatalf("custom validator account cannot be registered %v", err)
+			Logger.Fatalf("AddValidators: custom validator account cannot be registered: %w", err)
 		}
 		err = v.RegisterValidation("hash", ValidateHash)
 		if err != nil {
-			Logger.Fatalf("custom validator hash cannot be registered %v", err)
+			Logger.Fatalf("AddValidators: custom validator hash cannot be registered: %w", err)
 		}
 	}
 }

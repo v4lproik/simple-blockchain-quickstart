@@ -1,6 +1,7 @@
 package wallets
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,16 +22,16 @@ func NewEthKeystore(keystoreDataDirPath string) (*EthKeystoreService, error) {
 	var path os.FileInfo
 	var err error
 	if path, err = os.Stat(keystoreDataDirPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("cannot initiate a keystore with configuration: keystoreDataDirPath %v", keystoreDataDirPath)
+		return nil, fmt.Errorf("NewEthKeystore: error os.State with keystoreDataDirPath %s: %w", keystoreDataDirPath, err)
 	}
 
 	if !path.IsDir() {
-		return nil, fmt.Errorf("cannot initiate a keystore with keystoreDataDirPath %v not a folder", keystoreDataDirPath)
+		return nil, errors.New("NewEthKeystore: " + keystoreDataDirPath + " is not a folder")
 	}
 
 	ks := keystore.NewKeyStore(keystoreDataDirPath, keystore.StandardScryptN, keystore.StandardScryptP)
 	if ks == nil {
-		return nil, fmt.Errorf("cannot initiate a keystore with configuration: keystoreDataDirPath %v", keystoreDataDirPath)
+		return nil, errors.New("NewEthKeystore: failed initiating keystore with configuration keystoreDataDirPath " + keystoreDataDirPath)
 	}
 
 	return &EthKeystoreService{

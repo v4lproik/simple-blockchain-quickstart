@@ -35,7 +35,7 @@ func (u *UserService) Get(userName string) (*models.User, error) {
 	//small file at the moment so this works atm - this should be addressed at some point cf. kanban board
 	users, err := u.List()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Get: failed to list users: %w", err)
 	}
 
 	if val, ok := users[Name(userName)]; ok {
@@ -49,13 +49,13 @@ func (u *UserService) Get(userName string) (*models.User, error) {
 func (u *UserService) List() (map[Name]models.User, error) {
 	file, err := ioutil.ReadFile(u.userDatabasePath)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load toml file %v", err)
+		return nil, fmt.Errorf("List: failed to read user database: %w", err)
 	}
 
 	var usersFromDb UserFromDB
 	err = toml.Unmarshal(file, &usersFromDb)
 	if err != nil {
-		return nil, fmt.Errorf("users couldn't be retrieved %v", err)
+		return nil, fmt.Errorf("List: failed to unmarshal users: %w", err)
 	}
 
 	usersNb := len(usersFromDb.Nodes)

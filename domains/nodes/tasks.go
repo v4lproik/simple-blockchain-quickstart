@@ -46,10 +46,10 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			Logger.Debugf("looking for new nodes within the network")
+			Logger.Debugf("NodeTaskManager: Run: looking for new nodes within the network")
 			err := n.getOtherNodesViaNodeStatus()
 			if err != nil {
-				Logger.Errorf("error looking for new nodes within the network %v", err)
+				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
 			}
 		case <-ctx.Done():
 			ticker.Stop()
@@ -60,7 +60,7 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 	knownNetworkNodes, err := n.nodeService.List()
 	if err != nil {
-		return fmt.Errorf("error listing nodes: %s", err)
+		return fmt.Errorf("getOtherNodesViaNodeStatus: failed to list nodes: %w", err)
 	}
 
 	if len(knownNetworkNodes) == 0 {
@@ -69,17 +69,15 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 
 	state := n.state
 	for address, _ := range knownNetworkNodes {
-		Logger.Errorf("getOtherNodesViaNodeStatus: trying to get node status %s", address.String())
 		status, err := getNodeStatus(address)
 		if err != nil {
-			Logger.Errorf("getOtherNodesViaNodeStatus: unable to get node %s status %v", address.String(), err)
+			Logger.Errorf("getOtherNodesViaNodeStatus: failed to reach node: %s", err)
 			continue
 		}
 		currentHeight := state.GetLatestBlockHeight()
 		if currentHeight < status.Height {
 			missingBlockCount := status.Height - currentHeight
 			currentHash := state.GetLatestBlockHash()
-
 			Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
 			//sync database from that node
 			// get the blocks from other node
@@ -128,14 +126,14 @@ type NodeGetStatusResponse struct {
 func getStatusNode(r *http.Response) (NetworkNodeStatus, error) {
 	reqBodyJson, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return NetworkNodeStatus{}, fmt.Errorf("unable to read response body %s", err)
+		return NetworkNodeStatus{}, fmt.Errorf("getStatusNode: failed to read response body: %w", err)
 	}
 	defer r.Body.Close()
 
 	var response NodeGetStatusResponse
 	err = json.Unmarshal(reqBodyJson, &response)
 	if err != nil {
-		return NetworkNodeStatus{}, fmt.Errorf("unable to unmarshal response body %s", err)
+		return NetworkNodeStatus{}, fmt.Errorf("getStatusNode: failed to unmarshall body: %w", err)
 	}
 
 	statusNode := NetworkNodeStatus{}

@@ -40,16 +40,16 @@ func NewAddTransactionCommand(state models.State) (*AddTransactionCommand, error
 func checkArgs(c AddTransactionCommand) (models.Account, models.Account, error) {
 	from, err := models.NewAccount(c.From)
 	if err != nil {
-		return from, "", fmt.Errorf("from variable is not a valid ethereum account")
+		return from, "", errors.New("checkArgs: from variable is not a valid ethereum account")
 	}
 
 	to, err := models.NewAccount(c.To)
 	if err != nil {
-		return "", to, fmt.Errorf("to variable is not a valid ethereum account")
+		return to, from, errors.New("checkArgs: to variable is not a valid ethereum account")
 	}
 
 	if c.Value <= 0 {
-		return from, to, fmt.Errorf("value needs to be a positive value")
+		return from, to, errors.New("checksArgs: value needs to be a positive value")
 	}
 	return from, to, nil
 }
@@ -58,20 +58,16 @@ func (c *AddTransactionCommand) Execute(args []string) error {
 	//check args
 	from, to, err := checkArgs(*c)
 	if err != nil {
-		return err
+		return fmt.Errorf("Execute: error checking args: %s", err)
 	}
 	//create transaction object
 	tx := models.NewTransaction(from, to, c.Value, c.Reason)
 
 	//get the state
 	state := c.state
-	if err != nil {
-		return err
-	}
-
 	_, err = c.transactionService.AddTransaction(state, tx)
 	if err != nil {
-		return err
+		return fmt.Errorf("Execute: error adding tx: %s", err)
 	}
 
 	state.Print()

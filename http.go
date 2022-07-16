@@ -71,10 +71,10 @@ func runHttpServer() {
 	serverPort := apiConf.Server.Port
 	serverAddress := apiConf.Server.Address
 	if serverOpts.IsSsl {
-		Logger.Info("start server with tls")
+		Logger.Info("runHttpServer: start server with tls")
 		r.RunTLS(fmt.Sprintf(":%d", serverPort), serverOpts.CertFile, serverOpts.KeyFile)
 	} else {
-		Logger.Info("start server without tls")
+		Logger.Info("runHttpServer: start server without tls")
 		r.Run(fmt.Sprintf("%s:%d", serverAddress, serverPort))
 	}
 }
@@ -83,14 +83,14 @@ func bindFunctionalDomains(r *gin.Engine) {
 	//TODO: extract business logic and put it in a state service
 	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
 	if err != nil {
-		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %w", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %s", err)
 	}
 	//initiate services
 	errorBuilder := common.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
-		Logger.Fatalf("cannot create keystore service %v", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot create keystore service: %s", err)
 	}
 	jwtOpts := apiConf.Auth.Jwt
 	jwtService, err := services.NewJwtService(
@@ -111,22 +111,22 @@ func bindFunctionalDomains(r *gin.Engine) {
 		),
 	)
 	if err != nil {
-		Logger.Fatalf("cannot create jwt service %v", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot create jwt service: %s", err)
 	}
 	passwordService := services.NewDefaultPasswordService()
 	userService, err := services.NewUserService(opts.UsersFilePath)
 	if err != nil {
-		Logger.Fatalf("cannot create user service %v", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot create user service: %s", err)
 	}
 
 	nodeService, err := nodes.NewNodeService(opts.NodesFilePath)
 	if err != nil {
-		Logger.Fatalf("cannot create node service %v", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot create node service: %s", err)
 	}
 
 	blockService, err := services.NewFileBlockService(opts.TransactionsFilePath)
 	if err != nil {
-		Logger.Fatalf("cannot create block service %v", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot create block service: %s", err)
 	}
 
 	//initiate middlewares
@@ -152,7 +152,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 				ErrorBuilder: errorBuilder,
 			}, authMiddleware)
 		default:
-			Logger.Fatalf("the domain %s is unknown", domain)
+			Logger.Fatalf("bindFunctionalDomains: the functional domain %s is unknown", domain)
 		}
 	}
 }
