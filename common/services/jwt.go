@@ -7,7 +7,7 @@ import (
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/thoas/go-funk"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io/ioutil"
 	"time"
 )
@@ -173,7 +173,7 @@ func (j *JwtService) getJwksClient() error {
 		RefreshTimeout:   time.Second * time.Duration(j.verifyingConf.jkmsRefreshCacheTimeoutInSec),
 		RefreshRateLimit: time.Second * time.Duration(j.verifyingConf.jkmsRefreshCacheTimeoutInSec),
 		RefreshErrorHandler: func(err error) {
-			log.S().Errorf("couldn't reach the jwks url %v", err.Error())
+			Logger.Errorf("couldn't reach the jwks url %v", err.Error())
 		},
 	}
 

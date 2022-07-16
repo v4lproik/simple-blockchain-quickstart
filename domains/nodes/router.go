@@ -7,7 +7,7 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"net/http"
 )
 
@@ -65,11 +65,11 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 		AbortWithError(c, *env.errorBuilder.NewUnknownError())
 		return
 	}
-	log.S().Debugf("starting process of collecting blocks from hash=%s", params.From)
+	Logger.Debugf("starting process of collecting blocks from hash=%s", params.From)
 
 	blocks, err := env.blockService.GetNextBlocksFromHash(hashFrom)
 	if err != nil {
-		log.S().Error(fmt.Errorf("NodeListBlocks: couldn't retrieve blocks from DB: %w", err))
+		Logger.Error(fmt.Errorf("NodeListBlocks: couldn't retrieve blocks from DB: %w", err))
 		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "blocks could not be retrieved"))
 		return
 	}

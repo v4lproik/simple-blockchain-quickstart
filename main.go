@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 // @title Simple Blockchain Quickstart
@@ -24,9 +25,9 @@ func main() {
 		panic(err)
 	}
 
-	//init logger
-	InitLogger(opts.LogFilePath)
-	defer logger.Sync()
+	//init Logger
+	Logger.InitLogger(opts.LogFilePath)
+	defer Logger.Sync()
 
 	//display program configuration
 	displayAppConfiguration()

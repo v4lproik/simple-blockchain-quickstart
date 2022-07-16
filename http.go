@@ -16,8 +16,8 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/nodes"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
-	log "go.uber.org/zap"
 	"time"
 )
 
@@ -38,7 +38,7 @@ var (
 
 func runHttpServer() {
 	if err := env.Parse(&apiConf); err != nil {
-		logger.Fatal(err)
+		Logger.Fatal(err)
 	}
 
 	//init router
@@ -51,12 +51,12 @@ func runHttpServer() {
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
-	//extend logger to handlers exposed by Gin
-	r.Use(ginzap.Ginzap(logger.Desugar(), time.RFC3339, true))
+	//extend Logger to handlers exposed by Gin
+	r.Use(ginzap.Ginzap(Logger.Desugar(), time.RFC3339, true))
 
 	//logs all panic to error log
 	//stack opt means whether to append to the output the stack info
-	r.Use(ginzap.RecoveryWithZap(logger.Desugar(), true))
+	r.Use(ginzap.RecoveryWithZap(Logger.Desugar(), true))
 	r.Use(gin.Recovery())
 
 	//start the functional domains
@@ -67,10 +67,10 @@ func runHttpServer() {
 	serverPort := apiConf.Server.Port
 	serverAddress := apiConf.Server.Address
 	if serverOpts.IsSsl {
-		logger.Info("start server with tls")
+		Logger.Info("start server with tls")
 		r.RunTLS(fmt.Sprintf(":%d", serverPort), serverOpts.CertFile, serverOpts.KeyFile)
 	} else {
-		logger.Info("start server without tls")
+		Logger.Info("start server without tls")
 		r.Run(fmt.Sprintf("%s:%d", serverAddress, serverPort))
 	}
 }
@@ -79,14 +79,14 @@ func bindFunctionalDomains(r *gin.Engine) {
 	//TODO: extract business logic and put it in a state service
 	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
 	if err != nil {
-		logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %w", err)
+		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %w", err)
 	}
 	//initiate services
 	errorBuilder := common.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
-		log.S().Fatalf("cannot create keystore service %v", err)
+		Logger.Fatalf("cannot create keystore service %v", err)
 	}
 	jwtOpts := apiConf.Auth.Jwt
 	jwtService, err := services.NewJwtService(
@@ -107,22 +107,22 @@ func bindFunctionalDomains(r *gin.Engine) {
 		),
 	)
 	if err != nil {
-		log.S().Fatalf("cannot create jwt service %v", err)
+		Logger.Fatalf("cannot create jwt service %v", err)
 	}
 	passwordService := services.NewDefaultPasswordService()
 	userService, err := services.NewUserService(opts.UsersFilePath)
 	if err != nil {
-		log.S().Fatalf("cannot create user service %v", err)
+		Logger.Fatalf("cannot create user service %v", err)
 	}
 
 	nodeService, err := nodes.NewNodeService(opts.NodesFilePath)
 	if err != nil {
-		log.S().Fatalf("cannot create node service %v", err)
+		Logger.Fatalf("cannot create node service %v", err)
 	}
 
 	blockService, err := services.NewFileBlockService(opts.TransactionsFilePath)
 	if err != nil {
-		log.S().Fatalf("cannot create block service %v", err)
+		Logger.Fatalf("cannot create block service %v", err)
 	}
 
 	//initiate middlewares
@@ -148,7 +148,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 				ErrorBuilder: errorBuilder,
 			}, authMiddleware)
 		default:
-			log.S().Fatalf("the domain %s is unknown", domain)
+			Logger.Fatalf("the domain %s is unknown", domain)
 		}
 	}
 }

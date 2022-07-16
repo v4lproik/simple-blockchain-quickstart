@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 type PasswordCommands struct {
@@ -28,7 +28,7 @@ func (c *HashAPasswordCommand) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("cannot generate a hash %v", err)
 	}
-	log.S().Infof("hash: %s", hash)
+	Logger.Infof("hash: %s", hash)
 	return nil
 }
 
@@ -58,6 +58,6 @@ func (c *CompareHashCommand) Execute(args []string) error {
 	if isPassword {
 		verb = "do"
 	}
-	log.S().Infof("the password and the hash %s match", verb)
+	Logger.Infof("the password and the hash %s match", verb)
 	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"unicode"
 )
 
@@ -77,19 +77,19 @@ func (v ValidatorService) AddValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		err := v.RegisterValidation("enum", ValidateEnum)
 		if err != nil {
-			log.S().Fatalf("custom validator enum cannot be registered %v", err)
+			Logger.Fatalf("custom validator enum cannot be registered %v", err)
 		}
 		err = v.RegisterValidation("password", ValidatePassword)
 		if err != nil {
-			log.S().Fatalf("custom validator password cannot be registered %v", err)
+			Logger.Fatalf("custom validator password cannot be registered %v", err)
 		}
 		err = v.RegisterValidation("account", ValidateAccount)
 		if err != nil {
-			log.S().Fatalf("custom validator account cannot be registered %v", err)
+			Logger.Fatalf("custom validator account cannot be registered %v", err)
 		}
 		err = v.RegisterValidation("hash", ValidateHash)
 		if err != nil {
-			log.S().Fatalf("custom validator hash cannot be registered %v", err)
+			Logger.Fatalf("custom validator hash cannot be registered %v", err)
 		}
 	}
 }

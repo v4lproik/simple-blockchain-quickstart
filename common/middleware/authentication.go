@@ -7,7 +7,7 @@ import (
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 const (
@@ -20,7 +20,7 @@ func UpdateUserContext(c *gin.Context, user models.User) {
 }
 
 func AuthWebSessionMiddleware(auto401 bool, errorBuilder ErrorBuilder, jwtService *services.JwtService) gin.HandlerFunc {
-	log.S().Debugf("authentication is %s", auto401)
+	Logger.Debugf("authentication is %s", auto401)
 	return func(c *gin.Context) {
 		//if authentication not required
 		if !auto401 {

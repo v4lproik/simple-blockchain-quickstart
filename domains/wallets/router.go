@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"net/http"
 )
 
@@ -33,7 +33,7 @@ func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 
 	acc, err := env.Keystore.NewKeystoreAccount(params.Password)
 	if err != nil {
-		log.S().Errorf("cannot generate a new wallet account %v", err)
+		Logger.Errorf("cannot generate a new wallet account %v", err)
 		AbortWithError(c, *env.ErrorBuilder.New(http.StatusInternalServerError, "cannot generate a new wallet account", err))
 		return
 	}

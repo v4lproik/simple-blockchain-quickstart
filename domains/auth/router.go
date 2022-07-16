@@ -6,7 +6,7 @@ import (
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"net/http"
 )
 
@@ -30,7 +30,7 @@ func AuthRegister(router *gin.RouterGroup, env *AuthEnv) {
 		WithPath(env.jwtService.PrivateKeyPath()).
 		Build()
 	if err != nil {
-		log.S().Fatalf("cannot start jwks service %v", err)
+		Logger.Fatalf("cannot start jwks service %v", err)
 	}
 	router.GET(JWKS_ENDPOINT, gin_jwks_rsa.Jkws(*jwksConf))
 }

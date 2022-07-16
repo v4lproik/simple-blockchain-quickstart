@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -46,10 +46,10 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			log.S().Debugf("looking for new nodes within the network")
+			Logger.Debugf("looking for new nodes within the network")
 			err := n.getOtherNodesViaNodeStatus()
 			if err != nil {
-				log.S().Errorf("error looking for new nodes within the network %v", err)
+				Logger.Errorf("error looking for new nodes within the network %v", err)
 			}
 		case <-ctx.Done():
 			ticker.Stop()
@@ -64,15 +64,15 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 	}
 
 	if len(knownNetworkNodes) == 0 {
-		log.S().Debugf("getOtherNodesViaNodeStatus: no network nodes found... no sync...")
+		Logger.Debugf("getOtherNodesViaNodeStatus: no network nodes found... no sync...")
 	}
 
 	state := n.state
 	for address, _ := range knownNetworkNodes {
-		log.S().Errorf("getOtherNodesViaNodeStatus: trying to get node status %s", address.String())
+		Logger.Errorf("getOtherNodesViaNodeStatus: trying to get node status %s", address.String())
 		status, err := getNodeStatus(address)
 		if err != nil {
-			log.S().Errorf("getOtherNodesViaNodeStatus: unable to get node %s status %v", address.String(), err)
+			Logger.Errorf("getOtherNodesViaNodeStatus: unable to get node %s status %v", address.String(), err)
 			continue
 		}
 		currentHeight := state.GetLatestBlockHeight()
@@ -80,7 +80,7 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 			missingBlockCount := status.Height - currentHeight
 			currentHash := state.GetLatestBlockHash()
 
-			log.S().Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
+			Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
 			//sync database from that node
 			// get the blocks from other node
 			blocks, err := getNextNodeBlocksFromHash(address, currentHash)
@@ -90,13 +90,13 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 
 			// insert the new block into our own database
 			err = state.AddBlocks(blocks)
-			log.S().Error(err)
+			Logger.Error(err)
 		}
 
 		for networkNodeIp, newNode := range status.NetworkNodes {
 			_, isKnownNode := knownNetworkNodes[networkNodeIp]
 			if !isKnownNode {
-				log.S().Debugf("found new node with address %s", networkNodeIp)
+				Logger.Debugf("found new node with address %s", networkNodeIp)
 				knownNetworkNodes[networkNodeIp] = newNode
 			}
 		}
@@ -188,7 +188,7 @@ func getBlocks(r *http.Response) ([]models.Block, error) {
 		return blocks, fmt.Errorf("unable to read response body %s", err)
 	}
 	defer r.Body.Close()
-	log.S().Infof("%s", reqBodyJson)
+	Logger.Infof("%s", reqBodyJson)
 	var response BlocksResponse
 	err = json.Unmarshal(reqBodyJson, &response)
 	if err != nil {

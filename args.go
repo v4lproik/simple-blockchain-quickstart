@@ -5,6 +5,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 var opts struct {
@@ -18,15 +19,15 @@ var opts struct {
 }
 
 func displayAppConfiguration() {
-	logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
-	logger.Infof("Genesis file: %s", opts.GenesisFilePath)
-	logger.Infof("Users file: %s", opts.UsersFilePath)
-	logger.Infof("Nodes file: %s", opts.NodesFilePath)
-	logger.Infof("Keystore dir: %s", opts.KeystoreDirPath)
+	Logger.Infof("Transactions file: %s", opts.TransactionsFilePath)
+	Logger.Infof("Genesis file: %s", opts.GenesisFilePath)
+	Logger.Infof("Users file: %s", opts.UsersFilePath)
+	Logger.Infof("Nodes file: %s", opts.NodesFilePath)
+	Logger.Infof("Keystore dir: %s", opts.KeystoreDirPath)
 	if opts.LogFilePath != "" {
-		logger.Infof("Output in log file: %s", opts.LogFilePath)
+		Logger.Infof("Output in log file: %s", opts.LogFilePath)
 	} else {
-		logger.Infof("Output: console")
+		Logger.Infof("Output: console")
 	}
 }
 
@@ -49,7 +50,7 @@ func addCommands(parser *flags.Parser) error {
 func addTransactionCommands(parser *flags.Parser) error {
 	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
 	if err != nil {
-		logger.Fatalf("addTransactionCommands: %w", err)
+		Logger.Fatalf("addTransactionCommands: %w", err)
 	}
 
 	addT, _ := commands.NewAddTransactionCommand(state)

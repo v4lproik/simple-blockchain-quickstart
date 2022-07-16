@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
-	log "go.uber.org/zap"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io/ioutil"
 	"os"
 	"time"
@@ -148,8 +148,8 @@ func (s *FromFileState) AddBlock(block Block) error {
 	if err != nil {
 		return fmt.Errorf("AddBlock: cannot copy the state: %w", err)
 	}
-	log.S().Debugf("this %d", s.latestBlock.Header.Height)
-	log.S().Debugf("copy %d", copiedStateFromFile.latestBlock.Header.Height)
+	Logger.Debugf("this %d", s.latestBlock.Header.Height)
+	Logger.Debugf("copy %d", copiedStateFromFile.latestBlock.Header.Height)
 
 	// validate the block
 	err = copiedStateFromFile.applyBlock(block)
@@ -244,12 +244,12 @@ func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 // also checks if the blocks which is trying to be added has previousBlock (or parentBlock)
 // is block.height == previousBlock.height + 1 and that its previousBlock.parentHash points to block.hash
 func (s *FromFileState) applyBlock(block Block) error {
-	log.S().Debugf("%d == %d", block.Header.Height, s.latestBlock.Header.Height+1)
+	Logger.Debugf("%d == %d", block.Header.Height, s.latestBlock.Header.Height+1)
 	if block.Header.Height != s.latestBlock.Header.Height+1 {
 		return fmt.Errorf("applyBlock: %w", ErrNextBlockHeight)
 	}
 
-	log.S().Debugf("s.latestBlockHash %s == block.Header.Parent %s", s.latestBlockHash, block.Header.Parent)
+	Logger.Debugf("s.latestBlockHash %s == block.Header.Parent %s", s.latestBlockHash, block.Header.Parent)
 	if !CompareBlockHash(s.latestBlockHash, block.Header.Parent) {
 		return fmt.Errorf("applyBlock: %w", ErrNextBlockHash)
 	}
@@ -299,14 +299,14 @@ func (s *FromFileState) GetLatestBlockHeight() uint64 {
 }
 
 func (s *FromFileState) Print() {
-	log.S().Infof("#####################")
-	log.S().Infof("# Accounts balances #")
-	log.S().Infof("#####################")
-	log.S().Infof("State: %x", s.GetLatestBlockHash())
-	log.S().Infof("Height: %x", s.GetLatestBlockHeight())
-	log.S().Infof("---------------------")
+	Logger.Infof("#####################")
+	Logger.Infof("# Accounts balances #")
+	Logger.Infof("#####################")
+	Logger.Infof("State: %x", s.GetLatestBlockHash())
+	Logger.Infof("Height: %x", s.GetLatestBlockHeight())
+	Logger.Infof("---------------------")
 	for account, balance := range s.balances {
-		log.S().Infof("%s: %d", account, balance)
+		Logger.Infof("%s: %d", account, balance)
 	}
-	log.S().Infof("---------------------")
+	Logger.Infof("---------------------")
 }
