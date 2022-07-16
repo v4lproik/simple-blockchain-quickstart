@@ -28,7 +28,7 @@ func InitLogger(isProd bool, logFilePath string) {
 
 		zap.ReplaceGlobals(zapLogger)
 
-		zapLogger.Debug("initLogger: logger has been set globally")
+		zapLogger.Debug("initLogger: logger has been set globally with level: " + logLvl.String())
 	})
 }
 

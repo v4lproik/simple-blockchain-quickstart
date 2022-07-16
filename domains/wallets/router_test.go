@@ -78,7 +78,8 @@ var CreateWalletsDomainTests = []struct {
 	},
 }
 
-func TestBalancesEnv_ListBalances(t *testing.T) {
+func TestWalletsEnv_CreateWallets(t *testing.T) {
+	test.InitTestContext()
 	asserts := assert.New(t)
 
 	r := gin.New()

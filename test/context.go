@@ -2,9 +2,15 @@ package test
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/v4lproik/simple-blockchain-quickstart/common"
+	"github.com/v4lproik/simple-blockchain-quickstart/log"
+	"sync"
 )
 
 var (
+	// the init function is called in all test files, we don't need to reapply default configuration over and over
+	setContextSafeGuard sync.Once
+
 	//var which set the app context
 	GenesisFilePath      = "../../test/testdata/genesis_test.json"
 	EmptyGenesisFilePath = "../../test/testdata/genesis_empty.json"
@@ -21,42 +27,17 @@ var (
 		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
 		asserts.Regexp(wBodyE, wBodyA, "Response Content - "+testName)
 	}
+
+	//services used across the entire application
+	ErrorBuilder = common.NewErrorBuilder()
 )
 
-//function which help you set the app context
-type TestBlockchainFileDatabaseConf struct {
-	genesisFilePath            string
-	transactionFilePath        string
-	isWrongGenesisFilePath     bool
-	isWrongTransactionFilePath bool
-}
-
-func NewTestBlockchainFileDatabaseConf(genesisFilePath, transactionFilePath string) *TestBlockchainFileDatabaseConf {
-	return &TestBlockchainFileDatabaseConf{
-		genesisFilePath:            genesisFilePath,
-		transactionFilePath:        transactionFilePath,
-		isWrongGenesisFilePath:     false,
-		isWrongTransactionFilePath: false,
-	}
-}
-
-func (t TestBlockchainFileDatabaseConf) GenesisFilePath() string {
-	if t.isWrongGenesisFilePath {
-		return t.genesisFilePath[:1]
-	}
-	return t.genesisFilePath
-}
-
-func (t TestBlockchainFileDatabaseConf) TransactionFilePath() string {
-	if t.isWrongTransactionFilePath {
-		return t.transactionFilePath[:1]
-	}
-	return t.transactionFilePath
-}
-
-func (t *TestBlockchainFileDatabaseConf) SetTestBlockchainFileDatabaseConf(genesisFilePath string, transactionFilePath string, isWrongGenesisFilePath bool, isWrongTransactionFilePath bool) {
-	t.genesisFilePath = genesisFilePath
-	t.transactionFilePath = transactionFilePath
-	t.isWrongGenesisFilePath = isWrongGenesisFilePath
-	t.isWrongTransactionFilePath = isWrongTransactionFilePath
+func InitTestContext() {
+	setContextSafeGuard.Do(func() {
+		//test env, not prod
+		isProd := false
+		//stdout
+		logPath := ""
+		log.InitLogger(isProd, logPath)
+	})
 }
