@@ -13,13 +13,13 @@ proto:
 	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative proto/*.proto
 
 server:
-	./bin/${BINARY} -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
+	./bin/${BINARY} -g ./testdata/node1/genesis.json -d ./testdata/node1/blocks.db -k ./testdata/node1/keystore/ -u ./testdata/node1/users.toml -n ./testdata/node1/network_nodes.toml -r
 
-server_hot_reload:
-	${HOT_RELOAD_BIN} -- -g ./testdata/genesis.json -d ./testdata/blocks.db -k ./testdata/keystore/ -u ./testdata/users.toml -n ./testdata/network_nodes.toml -r
+server_hot_reload_1:
+	${HOT_RELOAD_BIN} -- -g ./testdata/node1/genesis.json -d ./testdata/node1/blocks.db -k ./testdata/node1/keystore/ -u ./testdata/node1/users.toml -n ./testdata/node1/network_nodes.toml -r
 
 server_hot_reload_2:
-	${HOT_RELOAD_BIN} -- -g ./testdata_2/genesis.json -d ./testdata_2/blocks.db -k ./testdata_2/keystore/ -u ./testdata_2/users.toml -n ./testdata_2/network_nodes.toml -r
+	${HOT_RELOAD_BIN} -- -g ./testdata/node2/genesis.json -d ./testdata/node2/blocks.db -k ./testdata/node2/keystore/ -u ./testdata/node2/users.toml -n ./testdata/node2/network_nodes.toml -r
 
 dep:
 	go mod download
