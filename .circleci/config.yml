@@ -44,13 +44,27 @@ jobs:
             - go-mod-cache-v2-{{ arch }}-{{ .Branch }}-{{ checksum "go.mod" }}
 
       - run:
-          name: Install dependencies & Launch tests
+          name: Install test dependencies
           command: |
             cd "$CIRCLE_WORKING_DIRECTORY"
             sudo chown -R $(id -u):$(id -g) $CIRCLE_WORKING_DIRECTORY
             sudo chmod +x $CIRCLE_WORKING_DIRECTORY/deployment_script/test.sh
             make dep
             go mod tidy
+            make test -B
+
+      - run:
+          name: Run code quality tests
+          command: |
+            go install mvdan.cc/gofumpt@latest
+            res=$(gofumpt -l .)
+            if [[ -n $res ]]; then
+              echo "$res"
+              exit 1
+            fi
+      - run:
+          name: Run Unit/Integration tests
+          command: |
             make test -B
 
       - save_cache:

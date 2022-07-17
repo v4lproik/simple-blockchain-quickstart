@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"io"
 	"os"
 	"sync"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
 type BlockService interface {
@@ -20,7 +21,7 @@ type FileBlockService struct {
 }
 
 func NewFileBlockService(transactionFilePath string) (*FileBlockService, error) {
-	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
+	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("NewFileBlockService: cannot open txs database: %w", err)
 	}
@@ -35,7 +36,7 @@ func (a *FileBlockService) GetNextBlocksFromHash(from models.Hash) ([]models.Blo
 	blocks := make([]models.Block, 0)
 	hasFoundHash := false
 
-	//for each block found in database
+	// for each block found in database
 	scanner := bufio.NewScanner(a.db)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {

@@ -3,13 +3,14 @@ package wallets
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
-	"os"
 )
 
-//fine to leave eth object as we are not planning on implementing another keystore
-//only for test/muck purposes
+// fine to leave eth object as we are not planning on implementing another keystore
+// only for test/muck purposes
 type KeystoreService interface {
 	NewKeystoreAccount(password string) (common.Address, error)
 }
@@ -29,6 +30,7 @@ func NewEthKeystore(keystoreDataDirPath string) (*EthKeystoreService, error) {
 		return nil, errors.New("NewEthKeystore: " + keystoreDataDirPath + " is not a folder")
 	}
 
+	// notest
 	ks := keystore.NewKeyStore(keystoreDataDirPath, keystore.StandardScryptN, keystore.StandardScryptP)
 	if ks == nil {
 		return nil, errors.New("NewEthKeystore: failed initiating keystore with configuration keystoreDataDirPath " + keystoreDataDirPath)

@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"os"
 )
 
 type EnvVal string
@@ -66,7 +67,7 @@ func checkArgs() {
 	}
 }
 
-//general commands
+// general commands
 func addCommands(parser *flags.Parser) error {
 	err := addTransactionCommands(parser)
 	if err != nil {
@@ -81,7 +82,7 @@ func addCommands(parser *flags.Parser) error {
 	return nil
 }
 
-//transaction
+// transaction
 func addTransactionCommands(parser *flags.Parser) error {
 	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
 	if err != nil {
@@ -106,7 +107,7 @@ func addTransactionCommands(parser *flags.Parser) error {
 	return nil
 }
 
-//password
+// password
 func addPasswordCommands(parser *flags.Parser) error {
 	_, err := parser.AddCommand(
 		"password",

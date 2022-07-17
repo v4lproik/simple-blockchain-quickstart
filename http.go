@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	parser "github.com/caarlos0/env/v6"
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
@@ -18,7 +20,6 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"github.com/v4lproik/simple-blockchain-quickstart/utils"
-	"time"
 )
 
 type Domain string
@@ -32,16 +33,14 @@ const (
 	WALLETS             = "WALLETS"
 )
 
-var (
-	apiConf = utils.ApiConf{}
-)
+var apiConf = utils.ApiConf{}
 
 func runHttpServer() {
 	if err := parser.Parse(&apiConf); err != nil {
 		Logger.Fatal(err)
 	}
 
-	//init router
+	// init router
 	serverCorsOpts := apiConf.Server.HttpCors
 	if env.isProd() {
 		gin.SetMode("release")
@@ -55,18 +54,18 @@ func runHttpServer() {
 		ExposeHeaders: []string{"Content-Length"},
 	}))
 
-	//extend Logger to handlers exposed by Gin
+	// extend Logger to handlers exposed by Gin
 	r.Use(ginzap.Ginzap(Logger.Desugar(), time.RFC3339, true))
 
-	//logs all panic to error log
-	//stack opt means whether to append to the output the stack info
+	// logs all panic to error log
+	// stack opt means whether to append to the output the stack info
 	r.Use(ginzap.RecoveryWithZap(Logger.Desugar(), true))
 	r.Use(gin.Recovery())
 
-	//start the functional domains
+	// start the functional domains
 	bindFunctionalDomains(r)
 
-	//start server according to the configuration passed in parameter or EnvVal variables
+	// start server according to the configuration passed in parameter or EnvVal variables
 	serverOpts := apiConf.Server.Options
 	serverPort := apiConf.Server.Port
 	serverAddress := apiConf.Server.Address
@@ -80,12 +79,12 @@ func runHttpServer() {
 }
 
 func bindFunctionalDomains(r *gin.Engine) {
-	//TODO: extract business logic and put it in a state service
+	// TODO: extract business logic and put it in a state service
 	state, err := models.NewStateFromFile(opts.GenesisFilePath, opts.TransactionsFilePath)
 	if err != nil {
 		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %s", err)
 	}
-	//initiate services
+	// initiate services
 	errorBuilder := common.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
@@ -129,11 +128,11 @@ func bindFunctionalDomains(r *gin.Engine) {
 		Logger.Fatalf("bindFunctionalDomains: cannot create block service: %s", err)
 	}
 
-	//initiate middlewares
+	// initiate middlewares
 	auto401 := apiConf.Auth.IsAuthenticationActivated
 	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
 
-	//run domains
+	// run domains
 	for _, domain := range apiConf.Domains.ToStart {
 		switch Domain(domain) {
 		case AUTH:

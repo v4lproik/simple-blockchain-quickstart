@@ -2,13 +2,14 @@ package balances
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/test"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 var (
@@ -117,22 +118,21 @@ func initServer(r *gin.Engine) {
 	RunDomain(r, balanceEnv)
 }
 
-//utils
-type testState struct {
-}
+// utils
+type testState struct{}
 
 func (t testState) Add(transaction models.Transaction) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (t testState) AddBlock(block models.Block) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (t testState) AddBlocks(blocks []models.Block) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -141,26 +141,26 @@ func (t testState) Balances() map[models.Account]uint {
 }
 
 func (t testState) Persist() (models.Hash, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (t testState) Close() error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (t testState) GetLatestBlockHash() models.Hash {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (t testState) GetLatestBlockHeight() uint64 {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (t testState) Print() {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }

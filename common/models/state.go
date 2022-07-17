@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jinzhu/copier"
-	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/jinzhu/copier"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 var (
@@ -51,13 +52,13 @@ type FromFileState struct {
 }
 
 func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*FromFileState, error) {
-	//read genesis file
+	// read genesis file
 	file, err := ioutil.ReadFile(genesisFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("NewStateFromFile: failed to read file: %w", err)
 	}
 
-	//extract genesis file information into struct
+	// extract genesis file information into struct
 	data := GenesisFile{}
 	err = json.Unmarshal([]byte(file), &data)
 	if err != nil {
@@ -73,7 +74,7 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*From
 		balances[acc] = balance
 	}
 
-	//read transactions database
+	// read transactions database
 	db, err := getTransactionsDb(transactionFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("NewStateFromFile: failed to get txs database: %w", err)
@@ -89,7 +90,7 @@ func NewStateFromFile(genesisFilePath string, transactionFilePath string) (*From
 func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileState, error) {
 	state := &FromFileState{balances, make([]Transaction, 0), db, Hash{}, Block{}}
 
-	//for each block found in database
+	// for each block found in database
 	scanner := bufio.NewScanner(db)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
@@ -111,7 +112,7 @@ func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileStat
 			return nil, fmt.Errorf("getFileStateFromFile: failed to applyTxs: %w", err)
 		}
 
-		//keep a copy of the latest block and its hash,
+		// keep a copy of the latest block and its hash,
 		// so it can be exposed to the network
 		state.latestBlockHash = blockDB.Hash
 		state.latestBlock = blockDB.Block
@@ -120,7 +121,7 @@ func getFileStateFromFile(balances map[Account]uint, db *os.File) (*FromFileStat
 }
 
 func getTransactionsDb(transactionFilePath string) (*os.File, error) {
-	return os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
+	return os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0o600)
 }
 
 func (s *FromFileState) Balances() map[Account]uint {
@@ -197,31 +198,31 @@ func (s *FromFileState) AddBlocks(blocks []Block) error {
 func (s *FromFileState) Persist() (Hash, error) {
 	hash := Hash{}
 
-	//create a new Block only with the new transactions
+	// create a new Block only with the new transactions
 	block := NewBlock(
 		s.latestBlockHash,
 		s.latestBlock.Header.Height+1,
 		uint64(time.Now().Unix()),
 		s.transactionsPool,
 	)
-	//generate block hash
+	// generate block hash
 	blockHash, err := block.Hash()
 	if err != nil {
 		return hash, fmt.Errorf("Persist: failed to get block hash: %w", err)
 	}
 
-	//create database block which includes its hash and the transactions (block itself)
+	// create database block which includes its hash and the transactions (block itself)
 	blockDB := BlockDB{blockHash, block}
 	err = s.persistBlockToDB(blockDB)
 	if err != nil {
 		return blockHash, fmt.Errorf("Persist: failed to persist the block: %w", err)
 	}
 
-	//latest block of the state is now the hash of the latest block inserted into the database
+	// latest block of the state is now the hash of the latest block inserted into the database
 	s.latestBlockHash = blockHash
 	s.latestBlock = blockDB.Block
 
-	//empty the transactions pool as it should only transactions that haven't been written to database yet
+	// empty the transactions pool as it should only transactions that haven't been written to database yet
 	s.transactionsPool = []Transaction{}
 
 	return s.latestBlockHash, nil
@@ -233,7 +234,7 @@ func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 		return fmt.Errorf("Persist: failed to marshall the block: %w", err)
 	}
 
-	//add to the DB the new block as well as a new line
+	// add to the DB the new block as well as a new line
 	_, err = s.dbFile.Write(append(blockDBJson, '\n'))
 	if err != nil {
 		return fmt.Errorf("Persist: failed to append block to file: %w", err)
@@ -272,7 +273,7 @@ func (s *FromFileState) applyTxs(txs []Transaction) error {
 // also checks if the account has enough money as well as the transaction metadata is valid
 func (s *FromFileState) applyTx(tx Transaction) error {
 	if tx.Reason == SELF_REWARD {
-		//refuse the transaction if it's a self reward with different from/to address
+		// refuse the transaction if it's a self reward with different from/to address
 		if !tx.To.isSameAccount(tx.From) {
 			return errors.New("applyTx: to!=from accounts not allowed with self-reward reason")
 		}

@@ -6,11 +6,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/argon2"
 	"strings"
+
+	"golang.org/x/crypto/argon2"
 )
 
-//inspired from: https://gist.github.com/alexedwards/34277fae0f48abe36822b375f0f6a621
+// inspired from: https://gist.github.com/alexedwards/34277fae0f48abe36822b375f0f6a621
 var (
 	ErrInvalidHash         = errors.New("invalid format")
 	ErrIncompatibleVersion = errors.New("incompatible version of argon2")

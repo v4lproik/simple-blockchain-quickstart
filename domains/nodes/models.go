@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"fmt"
+
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 

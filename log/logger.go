@@ -1,10 +1,11 @@
 package log
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"os"
 	"sync"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -81,7 +82,7 @@ func Sync() error {
 }
 
 func getEncoder(logFilePath string) zapcore.Encoder {
-	//if no log file path then output should be in console
+	// if no log file path then output should be in console
 	if logFilePath == "" {
 		return zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig())
 	}

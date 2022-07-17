@@ -46,7 +46,7 @@ func (n *NodeSerializer) Response() NetworkNodesResponse {
 	return *response
 }
 
-//blocks
+// blocks
 type BlockSerializer struct {
 	block models.Block
 }

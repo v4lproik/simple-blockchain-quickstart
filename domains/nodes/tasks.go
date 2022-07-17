@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 type NodeTaskManager struct {
@@ -25,7 +26,8 @@ func NewNodeTaskManager(
 	refreshInterval uint64,
 	nodeService *NodeService,
 	state models.State,
-	blockService services.BlockService) (*NodeTaskManager, error) {
+	blockService services.BlockService,
+) (*NodeTaskManager, error) {
 	if state == nil {
 		return nil, errors.New("NewNodeTaskManager: state cannot be nil")
 	}
@@ -52,6 +54,7 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
 			}
 		case <-ctx.Done():
+			Logger.Debugf("NodeTaskManager: Run: Stop looking for new nodes within the network")
 			ticker.Stop()
 		}
 	}
@@ -62,42 +65,45 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 	if err != nil {
 		return fmt.Errorf("getOtherNodesViaNodeStatus: failed to list nodes: %w", err)
 	}
-
 	if len(knownNetworkNodes) == 0 {
 		Logger.Debugf("getOtherNodesViaNodeStatus: no network nodes found... no sync...")
+		return nil
 	}
 
-	state := n.state
-	for address, _ := range knownNetworkNodes {
-		status, err := getNodeStatus(address)
-		if err != nil {
-			Logger.Errorf("getOtherNodesViaNodeStatus: failed to reach node: %s", err)
-			continue
-		}
-		currentHeight := state.GetLatestBlockHeight()
-		if currentHeight < status.Height {
-			missingBlockCount := status.Height - currentHeight
-			currentHash := state.GetLatestBlockHash()
-			Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
-			//sync database from that node
-			// get the blocks from other node
-			blocks, err := getNextNodeBlocksFromHash(address, currentHash)
+	// heightNodeMap := make(map[uint64]NetworkNodeAddress, len(knownNetworkNodes))
+	// state := n.state
+	for address := range knownNetworkNodes {
+		go func(address NetworkNodeAddress) {
+			status, err := getNodeStatus(address)
 			if err != nil {
-				return err
+				Logger.Errorf("getOtherNodesViaNodeStatus: failed to reach node: %s", err)
 			}
 
-			// insert the new block into our own database
-			err = state.AddBlocks(blocks)
-			Logger.Error(err)
-		}
-
-		for networkNodeIp, newNode := range status.NetworkNodes {
-			_, isKnownNode := knownNetworkNodes[networkNodeIp]
-			if !isKnownNode {
-				Logger.Debugf("found new node with address %s", networkNodeIp)
-				knownNetworkNodes[networkNodeIp] = newNode
+			for networkNodeIp, newNode := range status.NetworkNodes {
+				_, isKnownNode := knownNetworkNodes[networkNodeIp]
+				if !isKnownNode {
+					Logger.Debugf("found new node with address %s", networkNodeIp)
+					knownNetworkNodes[networkNodeIp] = newNode
+				}
 			}
-		}
+		}(address)
+
+		//currentHeight := state.GetLatestBlockHeight()
+		//if currentHeight < status.Height {
+		//	missingBlockCount := status.Height - currentHeight
+		//	currentHash := state.GetLatestBlockHash()
+		//	Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
+		//	//sync database from that node
+		//	// get the blocks from other node
+		//	blocks, err := getNextNodeBlocksFromHash(address, currentHash)
+		//	if err != nil {
+		//		return err
+		//	}
+		//
+		//	// insert the new block into our own database
+		//	err = state.AddBlocks(blocks)
+		//	Logger.Error(err)
+		//}
 	}
 
 	return nil
@@ -109,7 +115,7 @@ func getNodeStatus(nodeAddress NetworkNodeAddress) (NetworkNodeStatus, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
 
-	//TODO Do not use default http client
+	// TODO Do not use default http client
 	cc := &http.Client{}
 	response, err := cc.Do(req)
 	if err != nil {
@@ -164,11 +170,11 @@ func getNextNodeBlocksFromHash(nodeAddress NetworkNodeAddress, hash models.Hash)
 	// marshall payload
 	body, _ := json.Marshal(listBlocksParam)
 
-	//TODO Do not use default http client
+	// TODO Do not use default http client
 	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
-	//TODO Do not use default http client
+	// TODO Do not use default http client
 	cc := &http.Client{}
 	res, err := cc.Do(req)
 	if err != nil {

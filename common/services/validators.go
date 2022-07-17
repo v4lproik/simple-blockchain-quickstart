@@ -1,11 +1,12 @@
 package services
 
 import (
+	"unicode"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"unicode"
 )
 
 type ValidatorService struct{}
@@ -65,7 +66,7 @@ func ValidateAccount(fl validator.FieldLevel) bool {
 
 func ValidateHash(fl validator.FieldLevel) bool {
 	if hash, ok := fl.Field().Interface().(string); ok {
-		//check blocks model for length
+		// check blocks model for length
 		if len(hash) == 64 {
 			return true
 		}
