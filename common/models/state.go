@@ -150,8 +150,6 @@ func (s *FromFileState) AddBlock(block Block) error {
 	if err != nil {
 		return fmt.Errorf("AddBlock: failed to copy the state: %w", err)
 	}
-	Logger.Debugf("this %d", s.latestBlock.Header.Height)
-	Logger.Debugf("copy %d", copiedStateFromFile.latestBlock.Header.Height)
 
 	// validate the block
 	err = copiedStateFromFile.applyBlock(block)
@@ -246,12 +244,10 @@ func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 // also checks if the blocks which is trying to be added has previousBlock (or parentBlock)
 // is block.height == previousBlock.height + 1 and that its previousBlock.parentHash points to block.hash
 func (s *FromFileState) applyBlock(block Block) error {
-	Logger.Debugf("%d == %d", block.Header.Height, s.latestBlock.Header.Height+1)
 	if block.Header.Height != s.latestBlock.Header.Height+1 {
 		return fmt.Errorf("applyBlock: %w", ErrNextBlockHeight)
 	}
 
-	Logger.Debugf("s.latestBlockHash %s == block.Header.Parent %s", s.latestBlockHash, block.Header.Parent)
 	if !CompareBlockHash(s.latestBlockHash, block.Header.Parent) {
 		return fmt.Errorf("applyBlock: %w", ErrNextBlockHash)
 	}

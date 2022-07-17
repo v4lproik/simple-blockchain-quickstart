@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
@@ -59,4 +61,17 @@ func main() {
 			panic(err)
 		}
 	}
+}
+
+func funcName(arr []string, done chan<- bool, c chan<- map[string]int, wg *sync.WaitGroup) {
+	for i, add := range arr {
+		go func(i int, add string) {
+			defer wg.Done()
+			Logger.Infof("adding i=%d", i)
+			c <- map[string]int{add: i}
+		}(i, add)
+	}
+	wg.Wait()
+	Logger.Infof("calling done <- true")
+	done <- true
 }
