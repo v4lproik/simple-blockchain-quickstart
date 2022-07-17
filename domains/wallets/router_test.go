@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	common2 "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"github.com/v4lproik/simple-blockchain-quickstart/test"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 var (
@@ -121,7 +122,7 @@ func initServer(r *gin.Engine) {
 	RunDomain(r, walletsEnv)
 }
 
-//test models
+// test models
 type FaultyKeystore struct{}
 
 func NewFaultyKeystore() *FaultyKeystore {

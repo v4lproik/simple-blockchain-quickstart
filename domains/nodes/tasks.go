@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
-	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 type NodeTaskManager struct {
@@ -25,7 +26,8 @@ func NewNodeTaskManager(
 	refreshInterval uint64,
 	nodeService *NodeService,
 	state models.State,
-	blockService services.BlockService) (*NodeTaskManager, error) {
+	blockService services.BlockService,
+) (*NodeTaskManager, error) {
 	if state == nil {
 		return nil, errors.New("NewNodeTaskManager: state cannot be nil")
 	}
@@ -68,9 +70,9 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 		return nil
 	}
 
-	//heightNodeMap := make(map[uint64]NetworkNodeAddress, len(knownNetworkNodes))
-	//state := n.state
-	for address, _ := range knownNetworkNodes {
+	// heightNodeMap := make(map[uint64]NetworkNodeAddress, len(knownNetworkNodes))
+	// state := n.state
+	for address := range knownNetworkNodes {
 		go func(address NetworkNodeAddress) {
 			status, err := getNodeStatus(address)
 			if err != nil {
@@ -113,7 +115,7 @@ func getNodeStatus(nodeAddress NetworkNodeAddress) (NetworkNodeStatus, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
 
-	//TODO Do not use default http client
+	// TODO Do not use default http client
 	cc := &http.Client{}
 	response, err := cc.Do(req)
 	if err != nil {
@@ -168,11 +170,11 @@ func getNextNodeBlocksFromHash(nodeAddress NetworkNodeAddress, hash models.Hash)
 	// marshall payload
 	body, _ := json.Marshal(listBlocksParam)
 
-	//TODO Do not use default http client
+	// TODO Do not use default http client
 	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
-	//TODO Do not use default http client
+	// TODO Do not use default http client
 	cc := &http.Client{}
 	res, err := cc.Do(req)
 	if err != nil {

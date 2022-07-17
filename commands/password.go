@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/base64"
 	"fmt"
+
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )

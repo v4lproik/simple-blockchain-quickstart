@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
@@ -55,15 +56,15 @@ func checkArgs(c AddTransactionCommand) (models.Account, models.Account, error) 
 }
 
 func (c *AddTransactionCommand) Execute(_ []string) error {
-	//check args
+	// check args
 	from, to, err := checkArgs(*c)
 	if err != nil {
 		return fmt.Errorf("Execute: error checking args: %s", err)
 	}
-	//create transaction object
+	// create transaction object
 	tx := models.NewTransaction(from, to, c.Value, c.Reason)
 
-	//get the state
+	// get the state
 	state := c.state
 	_, err = c.transactionService.AddTransaction(state, tx)
 	if err != nil {

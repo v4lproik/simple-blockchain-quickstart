@@ -67,6 +67,13 @@ cmd="transaction list" docker-compose -f docker-compose-local.yml up
 chmod +x ./deployment_script/test.sh
 make test -B
 ```
+## Format the code
+```
+make format
+> gofumpt -l -w .
+args.go
+commands/password.go
+```
 ## Generate doc
 1. Install [swag](https://github.com/swaggo/swag)
 2. (Optional) Export the GOPATH set by goenv if you are using goenv

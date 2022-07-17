@@ -1,17 +1,20 @@
 package auth
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/gin-jwks-rsa"
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"net/http"
 )
 
-const LOGIN_ENDPOINT = "/login"
-const JWKS_ENDPOINT = "/.well-known/jwks.json"
+const (
+	LOGIN_ENDPOINT = "/login"
+	JWKS_ENDPOINT  = "/.well-known/jwks.json"
+)
 
 type AuthEnv struct {
 	errorBuilder           ErrorBuilder
@@ -42,34 +45,34 @@ type LoginParams struct {
 
 func (env AuthEnv) Login(c *gin.Context) {
 	params := &LoginParams{}
-	//check params
+	// check params
 	if err := ShouldBind(c, env.errorBuilder, "login cannot occur", params); err != nil {
 		AbortWithError(c, *err)
 		return
 	}
 
-	//check if user is in bdd
+	// check if user is in bdd
 	user, err := env.userService.Get(params.Username)
 	if err != nil {
 		AbortWithError(c, *env.errorBuilder.New(404, "user %s could not be found", params.Username))
 		return
 	}
 
-	//check if passwords match
+	// check if passwords match
 	_, err = env.passwordService.ComparePasswordAndHash(params.Password, user.Hash)
 	if err != nil {
 		AbortWithError(c, *env.errorBuilder.New(401, "password is not correct"))
 		return
 	}
 
-	//create and sign an access token if passwords match
+	// create and sign an access token if passwords match
 	token, err := env.jwtService.SignToken(*user)
 	if err != nil {
 		AbortWithError(c, *env.errorBuilder.NewUnknownError())
 		return
 	}
 
-	//render
+	// render
 	c.JSON(http.StatusOK, gin.H{"access_token": token})
 	return
 }

@@ -2,10 +2,11 @@ package nodes
 
 import (
 	"fmt"
-	"github.com/pelletier/go-toml/v2"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
 type NodeService struct {
@@ -13,20 +14,23 @@ type NodeService struct {
 	mu               sync.Mutex
 }
 
-type NetworkNodeName string
-type NetworkNodeRecord struct {
-	Address      string
-	Port         uint64
-	Is_bootstrap bool
-	Is_active    bool
-}
+type (
+	NetworkNodeName   string
+	NetworkNodeRecord struct {
+		Address      string
+		Port         uint64
+		Is_bootstrap bool
+		Is_active    bool
+	}
+)
+
 type NetworkNodeFromDB struct {
 	Nodes map[NetworkNodeName]NetworkNodeRecord
 }
 
 func NewNodeService(nodeDatabasePath string) (*NodeService, error) {
 	service := &NodeService{nodeDatabasePath: nodeDatabasePath}
-	//check if the file can be opened and list the nodes
+	// check if the file can be opened and list the nodes
 	if _, err := service.List(); err != nil {
 		return nil, nil
 	}
@@ -84,7 +88,7 @@ func (u *NodeService) Add(nodes map[NetworkNodeAddress]NetworkNode) error {
 		return fmt.Errorf("Add: failed to marshal node: %w", err)
 	}
 
-	err = os.WriteFile(u.nodeDatabasePath, byteNodes, 0644)
+	err = os.WriteFile(u.nodeDatabasePath, byteNodes, 0o644)
 	if err != nil {
 		return fmt.Errorf("Add: failed to write node in database: %w", err)
 	}

@@ -5,17 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"time"
+
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/thoas/go-funk"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"io/ioutil"
-	"time"
 )
 
-var (
-	ALLOWED_ALGORITHMS = []string{"HS256"}
-)
+var ALLOWED_ALGORITHMS = []string{"HS256"}
 
 type VerifyingConf struct {
 	jwksUrl                        string
@@ -141,8 +140,8 @@ func (j *JwtService) SignToken(content interface{}) (string, error) {
 
 // VerifyToken check if token is valid according to public key info expsed by jwks
 func (j *JwtService) VerifyToken(signedToken string) (jwt.Token, error) {
-	//lazy initialisation singleton
-	//very useful in the case of the client needs to be initiated after the endpoint is exposed
+	// lazy initialisation singleton
+	// very useful in the case of the client needs to be initiated after the endpoint is exposed
 	if j.jwksClient == nil {
 		err := j.getJwksClient()
 		if err != nil {
@@ -150,7 +149,7 @@ func (j *JwtService) VerifyToken(signedToken string) (jwt.Token, error) {
 		}
 	}
 
-	//parse token and validate it (eg is expired?)
+	// parse token and validate it (eg is expired?)
 	token, err := jwt.Parse(signedToken, j.jwksClient.Keyfunc)
 	if err != nil {
 		return jwt.Token{}, fmt.Errorf("VerifyToken: failed to parse token: %w", err)
@@ -166,7 +165,7 @@ func (j *JwtService) PrivateKeyId() string {
 	return j.signingConf.privateKeyId
 }
 
-//initiate jwks client
+// initiate jwks client
 func (j *JwtService) getJwksClient() error {
 	var err error
 	// initiate the jwks client

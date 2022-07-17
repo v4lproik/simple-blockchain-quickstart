@@ -2,14 +2,15 @@ package domains
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/v4lproik/simple-blockchain-quickstart/common"
-	"net/http"
 )
 
-//gin-Gonic Bind Format Error
-//Inspired from https://www.convictional.com/blog/gin-validation
+// gin-Gonic Bind Format Error
+// Inspired from https://www.convictional.com/blog/gin-validation
 type ErrorMsg struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`

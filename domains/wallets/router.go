@@ -1,11 +1,12 @@
 package wallets
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"net/http"
 )
 
 type WalletsEnv struct {
@@ -27,7 +28,7 @@ func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 	params := &CreateWalletParams{}
 	errMsg := "wallet cannot be created"
 
-	//check params
+	// check params
 	if err := ShouldBind(c, env.ErrorBuilder, errMsg, params); err != nil {
 		AbortWithError(c, *err)
 		return
@@ -40,6 +41,6 @@ func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 		return
 	}
 
-	//render
+	// render
 	c.JSON(http.StatusCreated, gin.H{"wallet": WalletSerializer{acc}.Response()})
 }

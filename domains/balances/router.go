@@ -1,10 +1,11 @@
 package balances
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
-	"net/http"
 )
 
 const LIST_BALANCES_ENDPOINT = "/"
@@ -33,9 +34,9 @@ func (env *BalancesEnv) ListBalances(c *gin.Context) {
 		return
 	}
 
-	//map state with state response
+	// map state with state response
 	serializer := BalancesSerializer{state.Balances()}
 
-	//render
+	// render
 	c.JSON(http.StatusOK, gin.H{"balances": serializer.Response()})
 }

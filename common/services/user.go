@@ -2,9 +2,10 @@ package services
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	"github.com/pelletier/go-toml/v2"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
-	"io/ioutil"
 )
 
 type UserService struct {
@@ -13,6 +14,7 @@ type UserService struct {
 
 // Name toml specific struct
 type Name string
+
 type UserFromDB struct {
 	Nodes map[Name]struct {
 		Hash string
@@ -22,7 +24,7 @@ type UserFromDB struct {
 // NewUserService initiate the user service
 func NewUserService(userDatabasePath string) (*UserService, error) {
 	service := &UserService{userDatabasePath: userDatabasePath}
-	//check if the file can be opened and list the nodes
+	// check if the file can be opened and list the nodes
 	if _, err := service.List(); err != nil {
 		return nil, nil
 	}
@@ -31,8 +33,8 @@ func NewUserService(userDatabasePath string) (*UserService, error) {
 
 // Get user if found, nil otherwise
 func (u *UserService) Get(userName string) (*models.User, error) {
-	//toml v2 has removed the querying language
-	//small file at the moment so this works atm - this should be addressed at some point cf. kanban board
+	// toml v2 has removed the querying language
+	// small file at the moment so this works atm - this should be addressed at some point cf. kanban board
 	users, err := u.List()
 	if err != nil {
 		return nil, fmt.Errorf("Get: failed to list users: %w", err)

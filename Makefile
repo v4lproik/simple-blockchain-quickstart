@@ -42,3 +42,6 @@ vet:
 
 fmt:
 	@gofmt -l -w $(SRC)
+
+format:
+	gofumpt -l -w .

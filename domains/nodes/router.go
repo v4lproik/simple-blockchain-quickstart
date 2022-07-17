@@ -2,17 +2,20 @@ package nodes
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"net/http"
 )
 
-const STATUS_NODE_ENDPOINT = "/status"
-const BLOCKS_NODE_ENDPOINT = "/blocks"
+const (
+	STATUS_NODE_ENDPOINT = "/status"
+	BLOCKS_NODE_ENDPOINT = "/blocks"
+)
 
 type NodesEnv struct {
 	errorBuilder ErrorBuilder
@@ -27,20 +30,20 @@ func NodesRegister(router *gin.RouterGroup, env *NodesEnv) {
 }
 
 func (env NodesEnv) NodeStatus(c *gin.Context) {
-	//get all the nodes
+	// get all the nodes
 	nodes, err := env.nodeService.List()
 	if err != nil {
 		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "nodes could not be found"))
 		return
 	}
 
-	//init serializer
+	// init serializer
 	serializer := &NodeSerializer{
 		State: env.state,
 		nodes: nodes,
 	}
 
-	//render
+	// render
 	c.JSON(http.StatusOK, gin.H{"status": serializer.Response()})
 }
 
@@ -51,13 +54,13 @@ type ListBlocksParam struct {
 // NodeListBlocks Get blocks from a specific hash specified in the payload
 func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	params := &ListBlocksParam{}
-	//check params
+	// check params
 	if err := ShouldBind(c, env.errorBuilder, "blocks cannot be listed", params); err != nil {
 		AbortWithError(c, *err)
 		return
 	}
 
-	//verified in parameter above
+	// verified in parameter above
 	hashFrom := models.Hash{}
 	err := hashFrom.UnmarshalText([]byte(params.From))
 	if err != nil {
@@ -73,7 +76,7 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 		return
 	}
 
-	//render
+	// render
 	serializer := BlocksSerializer{
 		blocks: blocks,
 	}
