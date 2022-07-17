@@ -8,12 +8,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
+
+type BlockHeight uint64
 
 type NodeTaskManager struct {
 	refreshIntervalInSeconds uint64
@@ -49,9 +52,15 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			Logger.Debugf("NodeTaskManager: Run: looking for new nodes within the network")
-			err := n.getOtherNodesViaNodeStatus()
+			nodeStatus, err := n.runFetchNodeStatusTask()
 			if err != nil {
 				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
+			}
+
+			Logger.Debugf("NodeTaskManager: Run: lookup for a node with a higher block height so we can synchronise")
+			err = n.runSyncNode(nodeStatus)
+			if err != nil {
+				Logger.Errorf("NodeTaskManager: Run: failed to synchronise: %s", err)
 			}
 		case <-ctx.Done():
 			Logger.Debugf("NodeTaskManager: Run: Stop looking for new nodes within the network")
@@ -60,50 +69,133 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 	}
 }
 
-func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
+func (n *NodeTaskManager) runFetchNodeStatusTask() (map[NetworkNodeAddress]NetworkNodeStatus, error) {
 	knownNetworkNodes, err := n.nodeService.List()
 	if err != nil {
-		return fmt.Errorf("getOtherNodesViaNodeStatus: failed to list nodes: %w", err)
+		return nil, fmt.Errorf("runFetchNodeStatusTask: failed to list nodes: %w", err)
 	}
 	if len(knownNetworkNodes) == 0 {
-		Logger.Debugf("getOtherNodesViaNodeStatus: no network nodes found... no sync...")
-		return nil
+		Logger.Debugf("runFetchNodeStatusTask: no network nodes found... no sync...")
+		return nil, nil
 	}
 
-	// heightNodeMap := make(map[uint64]NetworkNodeAddress, len(knownNetworkNodes))
-	// state := n.state
-	for address := range knownNetworkNodes {
+	// this is the minimum amount of calls that we'll be making
+	// log(n) calls is to be expected as each node has a X number of unknown nodes
+	// that we might be calling
+	wg := &sync.WaitGroup{}
+	wg.Add(len(knownNetworkNodes))
+
+	done := make(chan bool)
+	c := make(chan map[NetworkNodeAddress]NetworkNodeStatus)
+
+	// we use a buffered channel, no need for concurrent-safe map
+	nodeStatus := make(map[NetworkNodeAddress]NetworkNodeStatus, len(knownNetworkNodes))
+
+	go fetchNodesHeights(done, wg, c, knownNetworkNodes)
+
+waitLoop:
+	for {
+		select {
+		case val := <-c:
+			for i, s := range val {
+				nodeStatus[i] = s
+			}
+		case <-done:
+			close(c)
+			break waitLoop
+		}
+	}
+	close(done)
+
+	return nodeStatus, nil
+}
+
+func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map[NetworkNodeAddress]NetworkNodeStatus, nodes map[NetworkNodeAddress]NetworkNode) {
+	// asynchronously loop over each knownNode
+	for address := range nodes {
 		go func(address NetworkNodeAddress) {
+			defer wg.Done()
+
+			// call the node and get its status
+			// send in channel node height or 0 if the node is not reachable
 			status, err := getNodeStatus(address)
 			if err != nil {
-				Logger.Errorf("getOtherNodesViaNodeStatus: failed to reach node: %s", err)
+				nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
+				Logger.Warnf("runFetchNodeStatusTask: failed to reach node: %s", err)
+				return
 			}
+			nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
 
+			// each node status returns its own knownNodes information
+			// we also want to reach out to those nodes as their heights might be closer to the world state
 			for networkNodeIp, newNode := range status.NetworkNodes {
-				_, isKnownNode := knownNetworkNodes[networkNodeIp]
-				if !isKnownNode {
-					Logger.Debugf("found new node with address %s", networkNodeIp)
-					knownNetworkNodes[networkNodeIp] = newNode
+				_, isKnownNode := nodes[networkNodeIp]
+				// we only want to reach out to the node if it's not known and active
+				if !isKnownNode && newNode.IsActive {
+					nodes[networkNodeIp] = newNode
+
+					// increment delta to one as we run a new goroutine
+					wg.Add(1)
+					go func(address NetworkNodeAddress) {
+						defer wg.Done()
+
+						// call the node and get its status
+						// send in channel node height or 0 if the node is not reachable
+						status, err := getNodeStatus(address)
+						if err != nil {
+							nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
+							Logger.Warnf("runFetchNodeStatusTask: failed to reach node: %s", err)
+							return
+						}
+						nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
+					}(networkNodeIp)
 				}
 			}
 		}(address)
+	}
 
-		//currentHeight := state.GetLatestBlockHeight()
-		//if currentHeight < status.Height {
-		//	missingBlockCount := status.Height - currentHeight
-		//	currentHash := state.GetLatestBlockHash()
-		//	Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
-		//	//sync database from that node
-		//	// get the blocks from other node
-		//	blocks, err := getNextNodeBlocksFromHash(address, currentHash)
-		//	if err != nil {
-		//		return err
-		//	}
-		//
-		//	// insert the new block into our own database
-		//	err = state.AddBlocks(blocks)
-		//	Logger.Error(err)
-		//}
+	wg.Wait()
+	done <- true
+}
+
+func (n *NodeTaskManager) runSyncNode(nodeStatus map[NetworkNodeAddress]NetworkNodeStatus) error {
+	// get current block height
+	state := n.state
+	currentHeight := state.GetLatestBlockHeight()
+
+	// find the node with the highest block height and higher than ours
+	// if condition met, then synchronise, otherwise do not do anything
+	var nodeToSynchFrom map[NetworkNodeAddress]NetworkNodeStatus
+	for address, status := range nodeStatus {
+		if currentHeight < status.Height {
+			if nodeToSynchFrom == nil {
+				nodeToSynchFrom = make(map[NetworkNodeAddress]NetworkNodeStatus, 1)
+			}
+			nodeToSynchFrom[address] = status
+		}
+	}
+
+	// skip sync if couldn't find any node with a higher block height
+	if nodeToSynchFrom == nil {
+		Logger.Debugf("runSyncNode: couldn't find a node with a higher block height than us")
+		return nil
+	}
+
+	// start sync the node
+	for address, status := range nodeToSynchFrom {
+		missingBlockCount := status.Height - currentHeight
+		currentHash := state.GetLatestBlockHash()
+
+		Logger.Debugf("runSyncNode: starting synchronisation, new blocks (%d) needs from %s to be added", missingBlockCount, address.String())
+		blocks, err := getNextNodeBlocksFromHash(address, currentHash)
+		if err != nil {
+			return fmt.Errorf("runSyncNode: failed at fetching blocks from node to sychronise from: %w", err)
+		}
+
+		// insert the new blocks into our database
+		if err = state.AddBlocks(blocks); err != nil {
+			return fmt.Errorf("runSyncNode: failed to add blocks into database: %w", err)
+		}
 	}
 
 	return nil
@@ -122,24 +214,24 @@ func getNodeStatus(nodeAddress NetworkNodeAddress) (NetworkNodeStatus, error) {
 		return NetworkNodeStatus{}, err
 	}
 
-	return getStatusNode(response)
+	return unmarshalNodeStatus(response)
 }
 
 type NodeGetStatusResponse struct {
 	Status NetworkNodesResponse `json:"status"`
 }
 
-func getStatusNode(r *http.Response) (NetworkNodeStatus, error) {
+func unmarshalNodeStatus(r *http.Response) (NetworkNodeStatus, error) {
 	reqBodyJson, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return NetworkNodeStatus{}, fmt.Errorf("getStatusNode: failed to read response body: %w", err)
+		return NetworkNodeStatus{}, fmt.Errorf("unmarshalNodeStatus: failed to read response body: %w", err)
 	}
 	defer r.Body.Close()
 
 	var response NodeGetStatusResponse
 	err = json.Unmarshal(reqBodyJson, &response)
 	if err != nil {
-		return NetworkNodeStatus{}, fmt.Errorf("getStatusNode: failed to unmarshall body: %w", err)
+		return NetworkNodeStatus{}, fmt.Errorf("unmarshalNodeStatus: failed to unmarshall body: %w", err)
 	}
 
 	statusNode := NetworkNodeStatus{}
@@ -192,7 +284,7 @@ func getBlocks(r *http.Response) ([]models.Block, error) {
 		return blocks, fmt.Errorf("unable to read response body %s", err)
 	}
 	defer r.Body.Close()
-	Logger.Infof("%s", reqBodyJson)
+
 	var response BlocksResponse
 	err = json.Unmarshal(reqBodyJson, &response)
 	if err != nil {

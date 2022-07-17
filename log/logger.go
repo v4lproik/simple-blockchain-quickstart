@@ -65,6 +65,14 @@ func Panicf(format string, args ...interface{}) {
 	logger.Panicf(format, args...)
 }
 
+func Warn(args ...interface{}) {
+	logger.Warn(args...)
+}
+
+func Warnf(format string, args ...interface{}) {
+	logger.Warnf(format, args...)
+}
+
 func Fatal(args ...interface{}) {
 	logger.Fatal(args...)
 }

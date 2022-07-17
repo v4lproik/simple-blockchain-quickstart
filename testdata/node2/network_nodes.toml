@@ -9,3 +9,9 @@ address = "localhost"
 port=8082
 is_bootstrap=true
 is_active=true
+
+[Nodes.Omega]
+address = "localhost"
+port=8088
+is_bootstrap=true
+is_active=true
