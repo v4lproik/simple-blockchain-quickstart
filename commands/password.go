@@ -23,7 +23,7 @@ func NewHashAPasswordCommand() *HashAPasswordCommand {
 	}
 }
 
-func (c *HashAPasswordCommand) Execute(args []string) error {
+func (c *HashAPasswordCommand) Execute(_ []string) error {
 	hash, err := c.passwordService.GenerateHash(c.Password)
 	if err != nil {
 		return fmt.Errorf("Execute: cannot generate a hash: %w", err)
@@ -44,7 +44,7 @@ func NewCompareHashCommand() *CompareHashCommand {
 	}
 }
 
-func (c *CompareHashCommand) Execute(args []string) error {
+func (c *CompareHashCommand) Execute(_ []string) error {
 	hash, err := base64.StdEncoding.DecodeString(c.Hash)
 	if err != nil {
 		return fmt.Errorf("Execute: error decoding base64 hash: %w", err)

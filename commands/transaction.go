@@ -54,7 +54,7 @@ func checkArgs(c AddTransactionCommand) (models.Account, models.Account, error) 
 	return from, to, nil
 }
 
-func (c *AddTransactionCommand) Execute(args []string) error {
+func (c *AddTransactionCommand) Execute(_ []string) error {
 	//check args
 	from, to, err := checkArgs(*c)
 	if err != nil {
@@ -88,7 +88,7 @@ func NewListTransactionCommand(state models.State) (*ListTransactionCommand, err
 	return list, nil
 }
 
-func (c *ListTransactionCommand) Execute(args []string) error {
+func (c *ListTransactionCommand) Execute(_ []string) error {
 	c.state.Print()
 	return nil
 }
