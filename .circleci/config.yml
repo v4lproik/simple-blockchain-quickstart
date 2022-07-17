@@ -51,6 +51,20 @@ jobs:
             sudo chmod +x $CIRCLE_WORKING_DIRECTORY/deployment_script/test.sh
             make dep
             go mod tidy
+
+      - run:
+          name: Run code quality tests
+          command: |
+            go install mvdan.cc/gofumpt@latest
+            res=$(gofumpt -l .)
+            if [[ -n $res ]]; then
+              echo "$res"
+              exit 1
+            fi
+
+      - run:
+          name: Run Unit/Integration tests
+          command: |
             make test -B
 
       - run:
@@ -72,7 +86,6 @@ jobs:
           paths:
             - "/home/circleci/.go_workspace/pkg/mod"
 
-      #run swagger
       - run:
           name: Run swagger & Upload output to Apiary
           command: |
