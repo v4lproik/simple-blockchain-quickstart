@@ -52,6 +52,7 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
 			}
 		case <-ctx.Done():
+			Logger.Debugf("NodeTaskManager: Run: Stop looking for new nodes within the network")
 			ticker.Stop()
 		}
 	}
@@ -62,42 +63,45 @@ func (n *NodeTaskManager) getOtherNodesViaNodeStatus() error {
 	if err != nil {
 		return fmt.Errorf("getOtherNodesViaNodeStatus: failed to list nodes: %w", err)
 	}
-
 	if len(knownNetworkNodes) == 0 {
 		Logger.Debugf("getOtherNodesViaNodeStatus: no network nodes found... no sync...")
+		return nil
 	}
 
-	state := n.state
+	//heightNodeMap := make(map[uint64]NetworkNodeAddress, len(knownNetworkNodes))
+	//state := n.state
 	for address, _ := range knownNetworkNodes {
-		status, err := getNodeStatus(address)
-		if err != nil {
-			Logger.Errorf("getOtherNodesViaNodeStatus: failed to reach node: %s", err)
-			continue
-		}
-		currentHeight := state.GetLatestBlockHeight()
-		if currentHeight < status.Height {
-			missingBlockCount := status.Height - currentHeight
-			currentHash := state.GetLatestBlockHash()
-			Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
-			//sync database from that node
-			// get the blocks from other node
-			blocks, err := getNextNodeBlocksFromHash(address, currentHash)
+		go func(address NetworkNodeAddress) {
+			status, err := getNodeStatus(address)
 			if err != nil {
-				return err
+				Logger.Errorf("getOtherNodesViaNodeStatus: failed to reach node: %s", err)
 			}
 
-			// insert the new block into our own database
-			err = state.AddBlocks(blocks)
-			Logger.Error(err)
-		}
-
-		for networkNodeIp, newNode := range status.NetworkNodes {
-			_, isKnownNode := knownNetworkNodes[networkNodeIp]
-			if !isKnownNode {
-				Logger.Debugf("found new node with address %s", networkNodeIp)
-				knownNetworkNodes[networkNodeIp] = newNode
+			for networkNodeIp, newNode := range status.NetworkNodes {
+				_, isKnownNode := knownNetworkNodes[networkNodeIp]
+				if !isKnownNode {
+					Logger.Debugf("found new node with address %s", networkNodeIp)
+					knownNetworkNodes[networkNodeIp] = newNode
+				}
 			}
-		}
+		}(address)
+
+		//currentHeight := state.GetLatestBlockHeight()
+		//if currentHeight < status.Height {
+		//	missingBlockCount := status.Height - currentHeight
+		//	currentHash := state.GetLatestBlockHash()
+		//	Logger.Debugf("getOtherNodesViaNodeStatus: new blocks (%d) needs to be added", missingBlockCount)
+		//	//sync database from that node
+		//	// get the blocks from other node
+		//	blocks, err := getNextNodeBlocksFromHash(address, currentHash)
+		//	if err != nil {
+		//		return err
+		//	}
+		//
+		//	// insert the new block into our own database
+		//	err = state.AddBlocks(blocks)
+		//	Logger.Error(err)
+		//}
 	}
 
 	return nil

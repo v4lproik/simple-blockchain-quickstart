@@ -38,5 +38,4 @@ func (env *BalancesEnv) ListBalances(c *gin.Context) {
 
 	//render
 	c.JSON(http.StatusOK, gin.H{"balances": serializer.Response()})
-	return
 }

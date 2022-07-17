@@ -42,7 +42,6 @@ func (env NodesEnv) NodeStatus(c *gin.Context) {
 
 	//render
 	c.JSON(http.StatusOK, gin.H{"status": serializer.Response()})
-	return
 }
 
 type ListBlocksParam struct {
@@ -80,5 +79,4 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, serializer.Response())
-	return
 }

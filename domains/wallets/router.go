@@ -42,5 +42,4 @@ func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 
 	//render
 	c.JSON(http.StatusCreated, gin.H{"wallet": WalletSerializer{acc}.Response()})
-	return
 }

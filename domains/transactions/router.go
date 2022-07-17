@@ -48,14 +48,14 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 
 	state := env.state
 	if len(state.Balances()) == 0 {
-		AbortWithError(c, *env.errorBuilder.New(404, "balances could not be found"))
+		AbortWithError(c, *env.errorBuilder.New(http.StatusNotFound, "balances could not be found"))
 		return
 	}
 
 	//add to state
 	hash, err := env.transactionService.AddTransaction(state, tx)
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(500, "transaction cannot be added", err))
+		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "transaction cannot be added", err))
 		return
 	}
 
@@ -64,5 +64,4 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 
 	//render
 	c.JSON(http.StatusOK, gin.H{"transaction": serializer.Response()})
-	return
 }
