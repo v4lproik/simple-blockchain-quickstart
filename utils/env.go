@@ -40,4 +40,7 @@ type ApiConf struct {
 			}
 		}
 	}
+	Consensus struct {
+		Complexity int `env:"SBQ_CONSENSUS_COMPLEXITY,required"`
+	}
 }

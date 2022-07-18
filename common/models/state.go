@@ -200,6 +200,7 @@ func (s *FromFileState) Persist() (Hash, error) {
 	block := NewBlock(
 		s.latestBlockHash,
 		s.latestBlock.Header.Height+1,
+		0,
 		uint64(time.Now().Unix()),
 		s.transactionsPool,
 	)

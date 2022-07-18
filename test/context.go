@@ -1,6 +1,7 @@
 package test
 
 import (
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	"sync"
 
 	"github.com/stretchr/testify/assert"
@@ -30,15 +31,24 @@ var (
 	}
 
 	// services used across the entire application
-	ErrorBuilder = common.NewErrorBuilder()
+	ErrorBuilder    common.ErrorBuilder
+	KeyStoreService wallets.KeystoreService
 )
 
 func InitTestContext() {
 	setContextSafeGuard.Do(func() {
-		// test env, not prod
+		// init logger
 		isProd := false
 		// stdout
 		logPath := ""
 		log.InitLogger(isProd, logPath)
+
+		// init services
+		var err error
+		ErrorBuilder = common.NewErrorBuilder()
+		KeyStoreService, err = wallets.NewEthKeystore(KeystoreDirPath)
+		if err != nil {
+			log.Fatalf("InitTestContext: cannot init eth keystore service: %s", err)
+		}
 	})
 }
