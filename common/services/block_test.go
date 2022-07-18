@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
-	"github.com/v4lproik/simple-blockchain-quickstart/test"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
+	"github.com/v4lproik/simple-blockchain-quickstart/test"
 )
 
 func init() {
@@ -52,11 +53,11 @@ func TestFileBlockService_Mine(t *testing.T) {
 		},
 	}
 
-	//define variables
+	// define variables
 	ethAccount, _ := test.KeyStoreService.NewKeystoreAccount("password")
 	acc = models.Account(ethAccount.String())
 
-	//run tests
+	// run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &FileBlockService{

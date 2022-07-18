@@ -1,8 +1,9 @@
 package test
 
 import (
-	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	"sync"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/v4lproik/simple-blockchain-quickstart/common"

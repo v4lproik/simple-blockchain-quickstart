@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 	"io"
 	"math/rand"
 	"os"
 	"sync"
 	"time"
+
+	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
