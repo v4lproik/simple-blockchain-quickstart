@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -16,6 +17,7 @@ func init() {
 }
 
 var acc models.Account
+var ctx, _ = context.WithTimeout(context.Background(), 1*time.Millisecond)
 
 func TestFileBlockService_Mine(t *testing.T) {
 	type fields struct {
@@ -31,11 +33,11 @@ func TestFileBlockService_Mine(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *models.Block
+		want    interface{}
 		wantErr bool
 	}{
 		{
-			name: "mining a block should return a block with once",
+			name: "mining a block should return a block with a nonce",
 			fields: fields{
 				miningComplexity: 1,
 			},
@@ -51,10 +53,29 @@ func TestFileBlockService_Mine(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "mining a block with context error should return error",
+			fields: fields{
+				miningComplexity: 10,
+			},
+			args: args{
+				ctx: ctx,
+				pb: PendingBlock{
+					models.Hash{},
+					1,
+					uint64(time.Now().Unix()),
+					acc,
+					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD)},
+				},
+			},
+			wantErr: true,
+			want:    errors.New("Mine: mining task has been shutdown"),
+		},
 	}
 
 	// define variables
-	ethAccount, _ := test.KeyStoreService.NewKeystoreAccount("password")
+	ss, _ := NewEthKeystore(test.KeystoreDirPath)
+	ethAccount, _ := ss.NewKeystoreAccount("password")
 	acc = models.Account(ethAccount.String())
 
 	// run tests
@@ -68,6 +89,10 @@ func TestFileBlockService_Mine(t *testing.T) {
 			_, err := a.Mine(tt.args.ctx, tt.args.pb)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Mine() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if (err != nil) && err.Error() != tt.want.(error).Error() {
+				t.Errorf("Mine() error = %v, wantErr %v", err, tt.want)
 				return
 			}
 		})

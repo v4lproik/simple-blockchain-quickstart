@@ -1,6 +1,7 @@
 package wallets
 
 import (
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,7 @@ import (
 )
 
 type WalletsEnv struct {
-	Keystore     KeystoreService
+	Keystore     services.KeystoreService
 	ErrorBuilder ErrorBuilder
 }
 

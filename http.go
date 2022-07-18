@@ -87,7 +87,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 	// initiate services
 	errorBuilder := common.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
-	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
+	keystoreService, err := services.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
 		Logger.Fatalf("bindFunctionalDomains: cannot create keystore service: %s", err)
 	}

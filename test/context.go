@@ -3,8 +3,6 @@ package test
 import (
 	"sync"
 
-	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/log"
@@ -32,8 +30,7 @@ var (
 	}
 
 	// services used across the entire application
-	ErrorBuilder    common.ErrorBuilder
-	KeyStoreService wallets.KeystoreService
+	ErrorBuilder common.ErrorBuilder
 )
 
 func InitTestContext() {
@@ -45,11 +42,6 @@ func InitTestContext() {
 		log.InitLogger(isProd, logPath)
 
 		// init services
-		var err error
 		ErrorBuilder = common.NewErrorBuilder()
-		KeyStoreService, err = wallets.NewEthKeystore(KeystoreDirPath)
-		if err != nil {
-			log.Fatalf("InitTestContext: cannot init eth keystore service: %s", err)
-		}
 	})
 }
