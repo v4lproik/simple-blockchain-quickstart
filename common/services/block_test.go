@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -21,7 +20,6 @@ var ctx, _ = context.WithTimeout(context.Background(), 1*time.Millisecond)
 
 func TestFileBlockService_Mine(t *testing.T) {
 	type fields struct {
-		mu               sync.Mutex
 		db               *os.File
 		miningComplexity uint32
 	}
@@ -82,7 +80,6 @@ func TestFileBlockService_Mine(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &FileBlockService{
-				mu:               tt.fields.mu,
 				db:               tt.fields.db,
 				miningComplexity: tt.fields.miningComplexity,
 			}

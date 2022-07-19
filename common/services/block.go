@@ -34,6 +34,7 @@ func NewFileBlockService(transactionFilePath string, miningComplexity uint32) (*
 		return nil, fmt.Errorf("NewFileBlockService: cannot open txs database: %w", err)
 	}
 	return &FileBlockService{
+		mu:               sync.Mutex{},
 		db:               db,
 		miningComplexity: miningComplexity,
 	}, nil
