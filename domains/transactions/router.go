@@ -1,6 +1,7 @@
 package transactions
 
 import (
+	"errors"
 	"net/http"
 
 	. "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
@@ -45,6 +46,7 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 		to,
 		params.Value,
 		string(params.Reason),
+		DefaultTimeService.UnixUint64(),
 	)
 
 	state := env.state
@@ -54,15 +56,15 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 	}
 
 	// add to state
-	hash, err := env.transactionService.AddTransaction(state, tx)
+	err := env.transactionService.AddTx(tx)
 	if err != nil {
-		AbortWithError(c, NewError(http.StatusInternalServerError, "transaction cannot be added", err))
+		code := http.StatusInternalServerError
+		if errors.As(err, &services.ErrMarshalTx) {
+			code = http.StatusConflict
+		}
+		AbortWithError(c, NewError(code, "transaction cannot be added"))
 		return
 	}
 
-	// map state with state response
-	serializer := TransactionSerializer{*hash, *tx}
-
-	// render
-	c.JSON(http.StatusOK, gin.H{"transaction": serializer.Response()})
+	c.JSON(http.StatusCreated, gin.H{})
 }

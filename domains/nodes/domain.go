@@ -14,6 +14,7 @@ func RunDomain(
 	r *gin.Engine,
 	nodeService *NodeService,
 	state models.State,
+	transactionService services.TransactionService,
 	blockService services.BlockService,
 	taskManagerSyncInterval uint32,
 	middlewares ...gin.HandlerFunc,
@@ -31,7 +32,16 @@ func RunDomain(
 	})
 
 	// run background tasks
-	manager, _ := NewNodeTaskManager(taskManagerSyncInterval, nodeService, state, blockService)
+	manager, _ := NewNodeTaskManager(
+		taskManagerSyncInterval,
+		nodeService,
+		state,
+		transactionService,
+		blockService,
+	)
 	ctx := context.Background()
-	go manager.Run(ctx)
+	go manager.RunMine(ctx)
+
+	ctx = context.Background()
+	go manager.RunSync(ctx)
 }

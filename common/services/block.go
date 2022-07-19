@@ -24,18 +24,25 @@ type FileBlockService struct {
 	mu sync.Mutex
 	db *os.File
 
-	miningComplexity uint32
+	miningComplexity      uint32
+	thisNodeMiningAddress models.Account
 }
 
-func NewFileBlockService(transactionFilePath string, miningComplexity uint32) (*FileBlockService, error) {
+func NewFileBlockService(
+	transactionFilePath string,
+	miningComplexity uint32,
+	miningAddress models.Account,
+) (*FileBlockService, error) {
 	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("NewFileBlockService: cannot open txs database: %w", err)
 	}
 	return &FileBlockService{
-		mu:               sync.Mutex{},
-		db:               db,
-		miningComplexity: miningComplexity,
+		mu: sync.Mutex{},
+		db: db,
+
+		miningComplexity:      miningComplexity,
+		thisNodeMiningAddress: miningAddress,
 	}, nil
 }
 

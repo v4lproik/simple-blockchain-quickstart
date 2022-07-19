@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"io/ioutil"
 	"time"
 
@@ -108,7 +109,7 @@ func NewJwtService(verifyingConf VerifyingConf, signingConf SigningConf) (*JwtSe
 func (j *JwtService) SignToken(content interface{}) (string, error) {
 	var signedToken string
 	signingConf := j.signingConf
-	now := time.Now().UTC()
+	now := utils.DefaultTimeService.Now()
 
 	payload, err := json.Marshal(content)
 	if err != nil {

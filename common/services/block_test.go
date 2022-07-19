@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"os"
 	"testing"
 	"time"
@@ -46,7 +47,7 @@ func TestFileBlockService_Mine(t *testing.T) {
 				pb: PendingBlock{
 					models.Hash{},
 					1,
-					uint64(time.Now().Unix()),
+					utils.DefaultTimeService.UnixUint64(),
 					acc,
 					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD)},
 				},
@@ -63,7 +64,7 @@ func TestFileBlockService_Mine(t *testing.T) {
 				pb: PendingBlock{
 					models.Hash{},
 					1,
-					uint64(time.Now().Unix()),
+					utils.DefaultTimeService.UnixUint64(),
 					acc,
 					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD)},
 				},

@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/rand"
 	math "math/rand"
-	"time"
 )
 
 func GenerateRandomBytes(n uint32) ([]byte, error) {
@@ -17,7 +16,7 @@ func GenerateRandomBytes(n uint32) ([]byte, error) {
 }
 
 func GenerateNonce() uint32 {
-	math.Seed(time.Now().UnixNano())
+	math.Seed(DefaultTimeService.Nano())
 
 	// skipcq
 	return math.Uint32()

@@ -4,6 +4,8 @@ HOT_RELOAD_BIN=air
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 TEST=deployment_script/test.sh
 
+MINER_ADDRESS = ${demoPath}
+
 #useful in dockerfile
 print-%  : ; @echo $* = $($*)
 
@@ -13,13 +15,30 @@ proto:
 	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative proto/*.proto
 
 server:
-	./bin/${BINARY} -g ./testdata/node1/genesis.json -d ./testdata/node1/blocks.db -k ./testdata/node1/keystore/ -u ./testdata/node1/users.toml -n ./testdata/node1/network_nodes.toml -r
+	./bin/${BINARY} -g ./testdata/node1/genesis.json \
+	-d ./testdata/node1/blocks.db \
+	-k ./testdata/node1/keystore/ \
+	-u ./testdata/node1/users.toml \
+	-n ./testdata/node1/network_nodes.toml \
+	-m
+	-r
 
 server_hot_reload_1:
-	${HOT_RELOAD_BIN} -- -g ./testdata/node1/genesis.json -d ./testdata/node1/blocks.db -k ./testdata/node1/keystore/ -u ./testdata/node1/users.toml -n ./testdata/node1/network_nodes.toml -r
+	${HOT_RELOAD_BIN} -- -g ./testdata/node1/genesis.json \
+	-d ./testdata/node1/blocks.db \
+	-k ./testdata/node1/keystore/ \
+	-u ./testdata/node1/users.toml \
+	-n ./testdata/node1/network_nodes.toml \
+	-r
 
 server_hot_reload_2:
-	${HOT_RELOAD_BIN} -- -g ./testdata/node2/genesis.json -d ./testdata/node2/blocks.db -k ./testdata/node2/keystore/ -u ./testdata/node2/users.toml -n ./testdata/node2/network_nodes.toml -r
+	${HOT_RELOAD_BIN} -- -g ./testdata/node2/genesis.json \
+	-d ./testdata/node2/blocks.db \
+	-k ./testdata/node2/keystore/ \
+	-u ./testdata/node2/users.toml \
+	-n ./testdata/node2/network_nodes.toml \
+	-m
+	-r
 
 dep:
 	go mod download

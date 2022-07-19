@@ -120,7 +120,12 @@ func bindFunctionalDomains(r *gin.Engine) {
 		Logger.Fatalf("bindFunctionalDomains: cannot create node service: %s", err)
 	}
 
-	blockService, err := services.NewFileBlockService(opts.TransactionsFilePath, apiConf.Consensus.Complexity)
+	miningAccount, _ := models.NewAccount(opts.MinerAddress)
+	blockService, err := services.NewFileBlockService(
+		opts.TransactionsFilePath,
+		apiConf.Consensus.Complexity,
+		miningAccount,
+	)
 	if err != nil {
 		Logger.Fatalf("bindFunctionalDomains: cannot create block service: %s", err)
 	}
@@ -139,7 +144,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:
-			nodes.RunDomain(r, nodeService, state, blockService, apiConf.Synchronisation.RefreshIntervalInSeconds)
+			nodes.RunDomain(r, nodeService, state, fileTransactionService, blockService, apiConf.Synchronisation.RefreshIntervalInSeconds)
 		case TRANSACTIONS:
 			transactions.RunDomain(r, state, fileTransactionService, authMiddleware)
 		case WALLETS:

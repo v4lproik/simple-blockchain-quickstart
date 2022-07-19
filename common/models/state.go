@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"io/ioutil"
 	"os"
 	"time"
@@ -201,7 +202,7 @@ func (s *FromFileState) Persist() (Hash, error) {
 		s.latestBlockHash,
 		s.latestBlock.Header.Height+1,
 		0,
-		uint64(time.Now().Unix()),
+		utils.DefaultTimeService.UnixUint64(),
 		s.transactionsPool,
 	)
 	// generate block hash

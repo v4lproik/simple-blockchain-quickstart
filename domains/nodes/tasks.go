@@ -22,6 +22,7 @@ type NodeTaskManager struct {
 	refreshIntervalInSeconds uint32
 	nodeService              *NodeService
 	state                    models.State
+	transactionService       services.TransactionService
 	blockService             services.BlockService
 }
 
@@ -29,6 +30,7 @@ func NewNodeTaskManager(
 	refreshInterval uint32,
 	nodeService *NodeService,
 	state models.State,
+	transactionService services.TransactionService,
 	blockService services.BlockService,
 ) (*NodeTaskManager, error) {
 	if state == nil {
@@ -37,36 +39,51 @@ func NewNodeTaskManager(
 	if nodeService == nil {
 		return nil, errors.New("NewNodeTaskManager: node service cannot be nil")
 	}
+
 	return &NodeTaskManager{
 		refreshIntervalInSeconds: refreshInterval,
 		nodeService:              nodeService,
 		state:                    state,
+		transactionService:       transactionService,
 		blockService:             blockService,
 	}, nil
 }
 
-func (n *NodeTaskManager) Run(ctx context.Context) {
+func (n *NodeTaskManager) RunMine(ctx context.Context) {
+	for {
+		select {
+		case <-n.transactionService.NewPendingTxs():
+			Logger.Debugf("RunMine: RunMine: Stop mining...")
+
+		case <-ctx.Done():
+			Logger.Debugf("RunMine: RunMine: Stop mining...")
+			return
+		}
+	}
+}
+
+func (n *NodeTaskManager) RunSync(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * time.Duration(n.refreshIntervalInSeconds))
 
 	for {
 		select {
 		case <-ticker.C:
-			Logger.Debugf("NodeTaskManager: Run: looking for new nodes within the network")
+			Logger.Debugf("RunSync: RunSync: looking for new nodes within the network")
 
 			// first fetch the nodes status within the network
 			// status contains block height and other peers in network
 			nodeStatus, err := n.runFetchNodeStatus()
 			if err != nil {
-				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
+				Logger.Errorf("RunSync: RunSync: failed to lookup to new nodes: %s", err)
 			}
 
 			// time to synchronise our database as we have other nodes status block height
 			err = n.runSyncNode(nodeStatus)
 			if err != nil {
-				Logger.Errorf("NodeTaskManager: Run: failed to synchronise: %s", err)
+				Logger.Errorf("RunSync: RunSync: failed to synchronise: %s", err)
 			}
 		case <-ctx.Done():
-			Logger.Debugf("NodeTaskManager: Run: Stop looking for new nodes within the network")
+			Logger.Debugf("RunSync: RunSync: Stop looking for new nodes within the network")
 			ticker.Stop()
 		}
 	}

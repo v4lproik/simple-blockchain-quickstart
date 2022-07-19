@@ -21,6 +21,7 @@ type TransactionCommandsOpts struct {
 type AddTransactionCommand struct {
 	state              models.State
 	transactionService services.TransactionService
+	blockService       services.BlockService
 	From               string `short:"f" long:"from" description:"Transaction account to get tokens from" required:"true"`
 	To                 string `short:"t" long:"to" description:"Transaction account to send tokens to" required:"true"`
 	Value              uint   `short:"v" long:"value" description:"Value of the transaction" required:"true"`
@@ -62,15 +63,18 @@ func (c *AddTransactionCommand) Execute(_ []string) error {
 		return fmt.Errorf("Execute: error checking args: %s", err)
 	}
 	// create transaction object
-	tx := models.NewTransaction(from, to, c.Value, c.Reason)
+	tx := models.NewTransaction(from, to, c.Value, c.Reason, 0)
 
 	// get the state
 	state := c.state
-	_, err = c.transactionService.AddTransaction(state, tx)
+
+	// add the transaction
+	err = c.transactionService.AddTx(tx)
 	if err != nil {
 		return fmt.Errorf("Execute: error adding tx: %s", err)
 	}
 
+	// force mining process
 	state.Print()
 	return nil
 }
