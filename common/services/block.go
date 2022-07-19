@@ -28,13 +28,14 @@ type FileBlockService struct {
 	miningComplexity uint32
 }
 
-func NewFileBlockService(transactionFilePath string) (*FileBlockService, error) {
-	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0o600)
+func NewFileBlockService(transactionFilePath string, miningComplexity uint32) (*FileBlockService, error) {
+	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("NewFileBlockService: cannot open txs database: %w", err)
 	}
 	return &FileBlockService{
-		db: db,
+		db:               db,
+		miningComplexity: miningComplexity,
 	}, nil
 }
 

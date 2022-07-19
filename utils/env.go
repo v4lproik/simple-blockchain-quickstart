@@ -41,6 +41,9 @@ type ApiConf struct {
 		}
 	}
 	Consensus struct {
-		Complexity int `env:"SBQ_CONSENSUS_COMPLEXITY,required"`
+		Complexity uint32 `env:"SBQ_CONSENSUS_COMPLEXITY,required"`
+	}
+	Synchronisation struct {
+		RefreshIntervalInSeconds uint32 `env:"SBQ_SYNCHRONISATION_INTERVAL_IN_SEC,required"`
 	}
 }

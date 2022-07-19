@@ -11,8 +11,13 @@ import (
 
 const NODES_DOMAIN_URL = "/api/nodes"
 
-func RunDomain(r *gin.Engine, nodeService *NodeService, state models.State,
-	blockService services.BlockService, middlewares ...gin.HandlerFunc,
+func RunDomain(
+	r *gin.Engine,
+	nodeService *NodeService,
+	state models.State,
+	blockService services.BlockService,
+	taskManagerSyncInterval uint32,
+	middlewares ...gin.HandlerFunc,
 ) {
 	v1 := r.Group(NODES_DOMAIN_URL)
 	for _, middleware := range middlewares {
@@ -28,7 +33,7 @@ func RunDomain(r *gin.Engine, nodeService *NodeService, state models.State,
 	})
 
 	// run background tasks
-	manager, _ := NewNodeTaskManager(5, nodeService, state, blockService)
+	manager, _ := NewNodeTaskManager(taskManagerSyncInterval, nodeService, state, blockService)
 	ctx := context.Background()
 	go manager.Run(ctx)
 }

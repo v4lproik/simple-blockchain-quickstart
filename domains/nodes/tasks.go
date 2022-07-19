@@ -19,14 +19,14 @@ import (
 type BlockHeight uint64
 
 type NodeTaskManager struct {
-	refreshIntervalInSeconds uint64
+	refreshIntervalInSeconds uint32
 	nodeService              *NodeService
 	state                    models.State
 	blockService             services.BlockService
 }
 
 func NewNodeTaskManager(
-	refreshInterval uint64,
+	refreshInterval uint32,
 	nodeService *NodeService,
 	state models.State,
 	blockService services.BlockService,
@@ -52,12 +52,15 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			Logger.Debugf("NodeTaskManager: Run: looking for new nodes within the network")
-			nodeStatus, err := n.runFetchNodeStatusTask()
+
+			// first fetch the nodes status within the network
+			// status contains block height and other peers in network
+			nodeStatus, err := n.runFetchNodeStatus()
 			if err != nil {
 				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
 			}
 
-			Logger.Debugf("NodeTaskManager: Run: lookup for a node with a higher block height so we can synchronise")
+			// time to synchronise our database as we have other nodes status block height
 			err = n.runSyncNode(nodeStatus)
 			if err != nil {
 				Logger.Errorf("NodeTaskManager: Run: failed to synchronise: %s", err)
@@ -69,13 +72,13 @@ func (n *NodeTaskManager) Run(ctx context.Context) {
 	}
 }
 
-func (n *NodeTaskManager) runFetchNodeStatusTask() (map[NetworkNodeAddress]NetworkNodeStatus, error) {
+func (n *NodeTaskManager) runFetchNodeStatus() (map[NetworkNodeAddress]NetworkNodeStatus, error) {
 	knownNetworkNodes, err := n.nodeService.List()
 	if err != nil {
-		return nil, fmt.Errorf("runFetchNodeStatusTask: failed to list nodes: %w", err)
+		return nil, fmt.Errorf("runFetchNodeStatus: failed to list nodes: %w", err)
 	}
 	if len(knownNetworkNodes) == 0 {
-		Logger.Debugf("runFetchNodeStatusTask: no network nodes found... no sync...")
+		Logger.Debugf("runFetchNodeStatus: no network nodes found... no sync...")
 		return nil, nil
 	}
 
@@ -88,7 +91,7 @@ func (n *NodeTaskManager) runFetchNodeStatusTask() (map[NetworkNodeAddress]Netwo
 	done := make(chan bool)
 	c := make(chan map[NetworkNodeAddress]NetworkNodeStatus)
 
-	// we use a buffered channel, no need for concurrent-safe map
+	// we use a buffered channel, no need for safe concurrent map
 	nodeStatus := make(map[NetworkNodeAddress]NetworkNodeStatus, len(knownNetworkNodes))
 
 	go fetchNodesHeights(done, wg, c, knownNetworkNodes)
@@ -121,7 +124,7 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 			status, err := getNodeStatus(address)
 			if err != nil {
 				nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
-				Logger.Warnf("runFetchNodeStatusTask: failed to reach node: %s", err)
+				Logger.Warnf("runFetchNodeStatus: failed to reach node: %s", err)
 				return
 			}
 			nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
@@ -144,7 +147,7 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 						status, err := getNodeStatus(address)
 						if err != nil {
 							nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
-							Logger.Warnf("runFetchNodeStatusTask: failed to reach node: %s", err)
+							Logger.Warnf("runFetchNodeStatus: failed to reach node: %s", err)
 							return
 						}
 						nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
@@ -159,6 +162,8 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 }
 
 func (n *NodeTaskManager) runSyncNode(nodeStatus map[NetworkNodeAddress]NetworkNodeStatus) error {
+	Logger.Debugf("runSyncNode: synchronisation has started")
+
 	// get current block height
 	state := n.state
 	currentHeight := state.GetLatestBlockHeight()
@@ -198,6 +203,7 @@ func (n *NodeTaskManager) runSyncNode(nodeStatus map[NetworkNodeAddress]NetworkN
 		}
 	}
 
+	Logger.Debugf("runSyncNode: synchronisation is over")
 	return nil
 }
 
