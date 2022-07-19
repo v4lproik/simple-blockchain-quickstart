@@ -19,7 +19,6 @@ const (
 )
 
 type NodesEnv struct {
-	errorBuilder ErrorBuilder
 	nodeService  *NodeService
 	state        models.State
 	blockService services.BlockService
@@ -34,7 +33,7 @@ func (env NodesEnv) NodeStatus(c *gin.Context) {
 	// get all the nodes
 	nodes, err := env.nodeService.List()
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "nodes could not be found"))
+		AbortWithError(c, NewError(http.StatusInternalServerError, "nodes could not be found"))
 		return
 	}
 
@@ -56,8 +55,8 @@ type ListBlocksParam struct {
 func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	params := &ListBlocksParam{}
 	// check params
-	if err := ShouldBind(c, env.errorBuilder, "blocks cannot be listed", params); err != nil {
-		AbortWithError(c, *err)
+	if err := ShouldBind(c, "blocks cannot be listed", params); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
@@ -65,7 +64,7 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	hashFrom := models.Hash{}
 	err := hashFrom.UnmarshalText([]byte(params.From))
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.NewUnknownError())
+		AbortWithError(c, NewUnknownError())
 		return
 	}
 	Logger.Debugf("starting process of collecting blocks from hash=%s", params.From)
@@ -73,7 +72,7 @@ func (env NodesEnv) NodeListBlocks(c *gin.Context) {
 	blocks, err := env.blockService.GetNextBlocksFromHash(hashFrom)
 	if err != nil {
 		Logger.Error(fmt.Errorf("NodeListBlocks: couldn't retrieve blocks from DB: %w", err))
-		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "blocks could not be retrieved"))
+		AbortWithError(c, NewError(http.StatusInternalServerError, "blocks could not be retrieved"))
 		return
 	}
 

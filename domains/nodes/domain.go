@@ -3,8 +3,6 @@ package nodes
 import (
 	"context"
 
-	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
-
 	"github.com/gin-gonic/gin"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -30,7 +28,6 @@ func RunDomain(
 		nodeService:  nodeService,
 		state:        state,
 		blockService: blockService,
-		errorBuilder: utils.NewErrorBuilder(),
 	})
 
 	// run background tasks

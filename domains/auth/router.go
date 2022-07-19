@@ -18,7 +18,6 @@ const (
 )
 
 type AuthEnv struct {
-	errorBuilder           ErrorBuilder
 	jwtService             *services.JwtService
 	userService            *services.UserService
 	passwordService        *services.PasswordService
@@ -47,29 +46,29 @@ type LoginParams struct {
 func (env AuthEnv) Login(c *gin.Context) {
 	params := &LoginParams{}
 	// check params
-	if err := ShouldBind(c, env.errorBuilder, "login cannot occur", params); err != nil {
-		AbortWithError(c, *err)
+	if err := ShouldBind(c, "login cannot occur", params); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
 	// check if user is in bdd
 	user, err := env.userService.Get(params.Username)
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(404, "user %s could not be found", params.Username))
+		AbortWithError(c, NewError(http.StatusNotFound, "user %s could not be found", params.Username))
 		return
 	}
 
 	// check if passwords match
 	_, err = env.passwordService.ComparePasswordAndHash(params.Password, user.Hash)
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(401, "password is not correct"))
+		AbortWithError(c, NewError(http.StatusUnauthorized, "password is not correct"))
 		return
 	}
 
 	// create and sign an access token if passwords match
 	token, err := env.jwtService.SignToken(*user)
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.NewUnknownError())
+		AbortWithError(c, NewUnknownError())
 		return
 	}
 

@@ -16,7 +16,6 @@ const ADD_TRANSACTIONS_ENDPOINT = "/"
 type TransactionsEnv struct {
 	state              models.State
 	transactionService services.TransactionService
-	errorBuilder       ErrorBuilder
 }
 
 func TransactionsRegister(router *gin.RouterGroup, env *TransactionsEnv) {
@@ -33,8 +32,8 @@ type AddTransactionParams struct {
 func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 	params := &AddTransactionParams{}
 	// check params
-	if err := ShouldBind(c, env.errorBuilder, "transaction cannot be added", params); err != nil {
-		AbortWithError(c, *err)
+	if err := ShouldBind(c, "transaction cannot be added", params); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
@@ -50,14 +49,14 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 
 	state := env.state
 	if len(state.Balances()) == 0 {
-		AbortWithError(c, *env.errorBuilder.New(http.StatusNotFound, "balances could not be found"))
+		AbortWithError(c, NewError(http.StatusNotFound, "balances could not be found"))
 		return
 	}
 
 	// add to state
 	hash, err := env.transactionService.AddTransaction(state, tx)
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "transaction cannot be added", err))
+		AbortWithError(c, NewError(http.StatusInternalServerError, "transaction cannot be added", err))
 		return
 	}
 

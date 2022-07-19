@@ -3,8 +3,6 @@ package test
 import (
 	"sync"
 
-	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/v4lproik/simple-blockchain-quickstart/log"
 )
@@ -29,9 +27,6 @@ var (
 		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
 		asserts.Regexp(wBodyE, wBodyA, "Response Content - "+testName)
 	}
-
-	// services used across the entire application
-	ErrorBuilder utils.ErrorBuilder
 )
 
 func InitTestContext() {
@@ -41,8 +36,5 @@ func InitTestContext() {
 		// stdout
 		logPath := ""
 		log.InitLogger(isProd, logPath)
-
-		// init services
-		ErrorBuilder = utils.NewErrorBuilder()
 	})
 }

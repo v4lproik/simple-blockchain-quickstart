@@ -37,7 +37,7 @@ func getErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func ShouldBind(c *gin.Context, errorBuilder utils.ErrorBuilder, errMsg string, params interface{}) *utils.Error {
+func ShouldBind(c *gin.Context, errMsg string, params interface{}) *utils.Error {
 	if err := c.ShouldBind(params); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
@@ -45,9 +45,9 @@ func ShouldBind(c *gin.Context, errorBuilder utils.ErrorBuilder, errMsg string, 
 			for i, fe := range ve {
 				out[i] = ErrorMsg{fe.Field(), getErrorMsg(fe)}
 			}
-			return errorBuilder.New(http.StatusBadRequest, errMsg, out)
+			return utils.NewError(http.StatusBadRequest, errMsg, out)
 		}
-		return errorBuilder.New(http.StatusBadRequest, errMsg, err)
+		return utils.NewError(http.StatusBadRequest, errMsg, err)
 	}
 	return nil
 }

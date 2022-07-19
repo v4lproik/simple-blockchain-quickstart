@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	utils "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
-
 	parser "github.com/caarlos0/env/v6"
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
@@ -85,7 +83,6 @@ func bindFunctionalDomains(r *gin.Engine) {
 		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %s", err)
 	}
 	// initiate services
-	errorBuilder := utils.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := services.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
@@ -130,7 +127,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 
 	// initiate middlewares
 	auto401 := apiConf.Auth.IsAuthenticationActivated
-	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
+	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, jwtService)
 
 	// run domains
 	for _, domain := range apiConf.Domains.ToStart {
@@ -138,7 +135,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case AUTH:
 			auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
 		case BALANCES:
-			balances.RunDomain(r, balances.NewBalancesEnv(state, errorBuilder), authMiddleware)
+			balances.RunDomain(r, balances.NewBalancesEnv(state), authMiddleware)
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:
@@ -147,8 +144,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 			transactions.RunDomain(r, state, fileTransactionService, authMiddleware)
 		case WALLETS:
 			wallets.RunDomain(r, &wallets.WalletsEnv{
-				Keystore:     keystoreService,
-				ErrorBuilder: errorBuilder,
+				Keystore: keystoreService,
 			}, authMiddleware)
 		default:
 			Logger.Fatalf("bindFunctionalDomains: the functional domain %s is unknown", domain)

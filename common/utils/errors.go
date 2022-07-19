@@ -7,13 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ErrorBuilder struct{}
-
-func NewErrorBuilder() ErrorBuilder {
-	return ErrorBuilder{}
-}
-
-func (_ *ErrorBuilder) New(code int, msg string, context ...interface{}) *Error {
+func NewError(code int, msg string, context ...interface{}) *Error {
 	resp := &Error{}
 
 	resp.Err.Code = code
@@ -38,8 +32,8 @@ func (_ *ErrorBuilder) New(code int, msg string, context ...interface{}) *Error 
 	return resp
 }
 
-func (e *ErrorBuilder) NewUnknownError() *Error {
-	return e.New(http.StatusInternalServerError, "")
+func NewUnknownError() *Error {
+	return NewError(http.StatusInternalServerError, "")
 }
 
 type Error struct {
@@ -73,6 +67,6 @@ func (err *Error) Error() string {
 }
 
 // utility formatting API error to the client
-func AbortWithError(c *gin.Context, error Error) {
+func AbortWithError(c *gin.Context, error *Error) {
 	c.AbortWithStatusJSON(error.Code(), error)
 }
