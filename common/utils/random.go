@@ -16,9 +16,9 @@ func GenerateRandomBytes(n uint32) ([]byte, error) {
 	return b, nil
 }
 
-// skipcq: GSC-G404
 func GenerateNonce() uint32 {
 	math.Seed(time.Now().UnixNano())
 
+	// skipcq
 	return math.Uint32()
 }
