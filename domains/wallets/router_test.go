@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	utils "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	common2 "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	"github.com/v4lproik/simple-blockchain-quickstart/test"
 )
@@ -116,7 +117,7 @@ func initServer(r *gin.Engine) {
 	keystoreService, _ = services.NewEthKeystore(test.KeystoreDirPath)
 	walletsEnv = &WalletsEnv{
 		Keystore:     keystoreService,
-		ErrorBuilder: common2.NewErrorBuilder(),
+		ErrorBuilder: utils.NewErrorBuilder(),
 	}
 
 	RunDomain(r, walletsEnv)

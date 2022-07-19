@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	. "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/gin-gonic/gin"
-	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"

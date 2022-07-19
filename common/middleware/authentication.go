@@ -3,9 +3,10 @@ package middleware
 import (
 	"encoding/json"
 
+	. "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"

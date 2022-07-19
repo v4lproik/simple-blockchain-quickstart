@@ -15,8 +15,10 @@ func init() {
 	test.InitTestContext()
 }
 
-var acc models.Account
-var ctx, _ = context.WithTimeout(context.Background(), 1*time.Millisecond)
+var (
+	acc    models.Account
+	ctx, _ = context.WithTimeout(context.Background(), 1*time.Millisecond)
+)
 
 func TestFileBlockService_Mine(t *testing.T) {
 	type fields struct {

@@ -1,4 +1,4 @@
-package utils
+package main
 
 type ApiConf struct {
 	Env    string `env:"SBQ_ENV,required"`

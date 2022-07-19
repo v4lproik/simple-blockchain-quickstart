@@ -7,11 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"sync"
-	"time"
 
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
@@ -29,7 +28,7 @@ type FileBlockService struct {
 }
 
 func NewFileBlockService(transactionFilePath string, miningComplexity uint32) (*FileBlockService, error) {
-	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0600)
+	db, err := os.OpenFile(transactionFilePath, os.O_APPEND|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("NewFileBlockService: cannot open txs database: %w", err)
 	}
@@ -104,7 +103,7 @@ func (a *FileBlockService) Mine(ctx context.Context, pb PendingBlock) (*models.B
 		default:
 		}
 
-		nonce := generateNonce()
+		nonce := utils.GenerateNonce()
 		block = &models.Block{
 			Header: models.BlockHeader{
 				Parent: pb.parent,
@@ -137,12 +136,6 @@ func (a *FileBlockService) Mine(ctx context.Context, pb PendingBlock) (*models.B
 			return block, nil
 		}
 	}
-}
-
-func generateNonce() uint32 {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	return rand.Uint32()
 }
 
 func printAttempts(i uint32) {

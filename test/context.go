@@ -3,8 +3,9 @@ package test
 import (
 	"sync"
 
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/stretchr/testify/assert"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
@@ -30,7 +31,7 @@ var (
 	}
 
 	// services used across the entire application
-	ErrorBuilder common.ErrorBuilder
+	ErrorBuilder utils.ErrorBuilder
 )
 
 func InitTestContext() {
@@ -42,6 +43,6 @@ func InitTestContext() {
 		log.InitLogger(isProd, logPath)
 
 		// init services
-		ErrorBuilder = common.NewErrorBuilder()
+		ErrorBuilder = utils.NewErrorBuilder()
 	})
 }

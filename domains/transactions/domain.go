@@ -2,9 +2,9 @@ package transactions
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 )
 
 const TRANSACTIONS_DOMAIN_URL = "/api/transactions"
@@ -18,6 +18,6 @@ func RunDomain(r *gin.Engine, state models.State, transactionService services.Tr
 	TransactionsRegister(v1.Group("/"), &TransactionsEnv{
 		state:              state,
 		transactionService: transactionService,
-		errorBuilder:       common.NewErrorBuilder(),
+		errorBuilder:       utils.NewErrorBuilder(),
 	})
 }

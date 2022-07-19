@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	utils "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	parser "github.com/caarlos0/env/v6"
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/middleware"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -19,7 +20,6 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"github.com/v4lproik/simple-blockchain-quickstart/utils"
 )
 
 type Domain string
@@ -33,7 +33,7 @@ const (
 	WALLETS             = "WALLETS"
 )
 
-var apiConf = utils.ApiConf{}
+var apiConf = ApiConf{}
 
 func runHttpServer() {
 	if err := parser.Parse(&apiConf); err != nil {
@@ -85,7 +85,7 @@ func bindFunctionalDomains(r *gin.Engine) {
 		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %s", err)
 	}
 	// initiate services
-	errorBuilder := common.NewErrorBuilder()
+	errorBuilder := utils.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
 	keystoreService, err := services.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
