@@ -13,7 +13,7 @@ func NewErrorBuilder() ErrorBuilder {
 	return ErrorBuilder{}
 }
 
-func (e *ErrorBuilder) New(code int, msg string, context ...interface{}) *Error {
+func (_ *ErrorBuilder) New(code int, msg string, context ...interface{}) *Error {
 	resp := &Error{}
 
 	resp.Err.Code = code
