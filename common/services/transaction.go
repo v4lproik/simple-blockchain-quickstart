@@ -3,7 +3,6 @@ package services
 import (
 	"errors"
 	"fmt"
-
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
@@ -26,19 +25,16 @@ type FileTransactionService struct {
 	newPendingTxs chan models.Transaction
 }
 
-func (a FileTransactionService) NewPendingTxs() chan models.Transaction {
-	return a.newPendingTxs
-}
-
 // NewFileTransactionService default constructor
-func NewFileTransactionService() FileTransactionService {
-	return FileTransactionService{
+func NewFileTransactionService() *FileTransactionService {
+	return &FileTransactionService{
 		pendingTxPool: make(map[models.TransactionId]models.Transaction),
+		newPendingTxs: make(chan models.Transaction),
 	}
 }
 
 // AddTx adds a transaction to the pool
-func (a FileTransactionService) AddTx(tx *models.Transaction) error {
+func (a *FileTransactionService) AddTx(tx *models.Transaction) error {
 	if tx == nil {
 		return errors.New("AddTx: nil transaction")
 	}
@@ -51,11 +47,10 @@ func (a FileTransactionService) AddTx(tx *models.Transaction) error {
 
 	// send the event that there's a new tx ready to be mined
 	a.newPendingTxs <- *tx
-
 	return nil
 }
 
-func (a FileTransactionService) addTx(tx models.Transaction) error {
+func (a *FileTransactionService) addTx(tx models.Transaction) error {
 	hash, err := tx.Hash()
 	if err != nil {
 		return fmt.Errorf("addTx: %w: %s", ErrMarshalTx, err.Error())
@@ -71,6 +66,10 @@ func (a FileTransactionService) addTx(tx models.Transaction) error {
 }
 
 // RemoveTx remove transaction from pool
-func (a FileTransactionService) RemoveTx(id models.TransactionId) {
+func (a *FileTransactionService) RemoveTx(id models.TransactionId) {
 	delete(a.pendingTxPool, id)
+}
+
+func (a *FileTransactionService) NewPendingTxs() chan models.Transaction {
+	return a.newPendingTxs
 }

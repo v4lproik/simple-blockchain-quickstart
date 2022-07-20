@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -20,10 +21,12 @@ type BlockHeight uint64
 
 type NodeTaskManager struct {
 	refreshIntervalInSeconds uint32
-	nodeService              *NodeService
-	state                    models.State
-	transactionService       services.TransactionService
-	blockService             services.BlockService
+
+	state models.State
+
+	nodeService        *NodeService
+	transactionService services.TransactionService
+	blockService       services.BlockService
 }
 
 func NewNodeTaskManager(
@@ -50,13 +53,26 @@ func NewNodeTaskManager(
 }
 
 func (n *NodeTaskManager) RunMine(ctx context.Context) {
+	Logger.Debugf("RunMine: Start mining...")
 	for {
 		select {
-		case <-n.transactionService.NewPendingTxs():
-			Logger.Debugf("RunMine: RunMine: Stop mining...")
+		case pendingTx := <-n.transactionService.NewPendingTxs():
+			Logger.Debugf("RunMine: Received new transaction...")
+			_, err := n.blockService.Mine(context.Background(), models.PendingBlock{
+				Parent:       n.state.GetLatestBlockHash(),
+				Height:       n.state.GetLatestBlockHeight() + 1,
+				Time:         utils.DefaultTimeService.UnixUint64(),
+				MinerAddress: n.blockService.ThisNodeMiningAddress(),
+				Txs: []models.Transaction{
+					*models.NewTransaction(pendingTx.From, pendingTx.To, pendingTx.Value, pendingTx.Reason, pendingTx.Time),
+				},
+			})
+			if err != nil {
+				return
+			}
 
 		case <-ctx.Done():
-			Logger.Debugf("RunMine: RunMine: Stop mining...")
+			Logger.Debugf("RunMine: Stop mining...")
 			return
 		}
 	}

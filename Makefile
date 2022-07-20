@@ -20,7 +20,7 @@ server:
 	-k ./testdata/node1/keystore/ \
 	-u ./testdata/node1/users.toml \
 	-n ./testdata/node1/network_nodes.toml \
-	-m
+	-m "0x1111111111111111"
 	-r
 
 server_hot_reload_1:
@@ -29,6 +29,7 @@ server_hot_reload_1:
 	-k ./testdata/node1/keystore/ \
 	-u ./testdata/node1/users.toml \
 	-n ./testdata/node1/network_nodes.toml \
+	-m "0x01fc1af4a56cde68675dc44cabd486e8d3559f07" \
 	-r
 
 server_hot_reload_2:
@@ -37,7 +38,7 @@ server_hot_reload_2:
 	-k ./testdata/node2/keystore/ \
 	-u ./testdata/node2/users.toml \
 	-n ./testdata/node2/network_nodes.toml \
-	-m
+	-m "0x01fc1af4a56cde68675dc44cabd486e8d3559f07" \
 	-r
 
 dep:

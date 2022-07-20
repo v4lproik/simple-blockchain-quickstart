@@ -18,6 +18,9 @@ import (
 
 type BlockService interface {
 	GetNextBlocksFromHash(models.Hash) ([]models.Block, error)
+	Mine(context.Context, models.PendingBlock) (*models.Block, error)
+
+	ThisNodeMiningAddress() models.Account
 }
 
 type FileBlockService struct {
@@ -86,19 +89,11 @@ func (a *FileBlockService) GetNextBlocksFromHash(from models.Hash) ([]models.Blo
 	return blocks, nil
 }
 
-type PendingBlock struct {
-	parent models.Hash
-	height uint64
-	time   uint64
-	miner  models.Account
-	txs    []models.Transaction
-}
-
 // Mine mines a pending block meaning that it'll try to find a valid nonce
 // so it can create a block in the blockchain
-func (a *FileBlockService) Mine(ctx context.Context, pb PendingBlock) (*models.Block, error) {
+func (a *FileBlockService) Mine(ctx context.Context, pb models.PendingBlock) (*models.Block, error) {
 	var block *models.Block
-	if len(pb.txs) == 0 {
+	if len(pb.Txs) == 0 {
 		return nil, errors.New("Mine: cannot mine block with empty transaction")
 	}
 
@@ -113,12 +108,12 @@ func (a *FileBlockService) Mine(ctx context.Context, pb PendingBlock) (*models.B
 		nonce := utils.GenerateNonce()
 		block = &models.Block{
 			Header: models.BlockHeader{
-				Parent: pb.parent,
-				Height: pb.height,
+				Parent: pb.Parent,
+				Height: pb.Height,
 				Nonce:  nonce,
-				Time:   pb.time,
+				Time:   pb.Time,
 			},
-			Txs: pb.txs,
+			Txs: pb.Txs,
 		}
 
 		blockHash, err := block.Hash()
@@ -143,6 +138,10 @@ func (a *FileBlockService) Mine(ctx context.Context, pb PendingBlock) (*models.B
 			return block, nil
 		}
 	}
+}
+
+func (a *FileBlockService) ThisNodeMiningAddress() models.Account {
+	return a.thisNodeMiningAddress
 }
 
 func printAttempts(i uint32) {
