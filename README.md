@@ -13,7 +13,7 @@ make dep
 ```
 ### Set env variables  
 ```
-sh config/local.env
+source config/local.env
 ```
 ### Building  
 ```
