@@ -3,10 +3,11 @@ package services
 import (
 	"context"
 	"errors"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/test"
@@ -28,7 +29,7 @@ func TestFileBlockService_Mine(t *testing.T) {
 	}
 	type args struct {
 		ctx context.Context
-		pb  PendingBlock
+		pb  models.PendingBlock
 	}
 	tests := []struct {
 		name    string
@@ -44,13 +45,12 @@ func TestFileBlockService_Mine(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				pb: PendingBlock{
+				pb: models.NewPendingBlock(
 					models.Hash{},
 					1,
-					utils.DefaultTimeService.UnixUint64(),
 					acc,
-					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD)},
-				},
+					utils.DefaultTimeService.UnixUint64(),
+					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD, utils.DefaultTimeService.UnixUint64())}),
 			},
 			wantErr: false,
 		},
@@ -61,13 +61,12 @@ func TestFileBlockService_Mine(t *testing.T) {
 			},
 			args: args{
 				ctx: ctx,
-				pb: PendingBlock{
+				pb: models.NewPendingBlock(
 					models.Hash{},
 					1,
-					utils.DefaultTimeService.UnixUint64(),
 					acc,
-					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD)},
-				},
+					utils.DefaultTimeService.UnixUint64(),
+					[]models.Transaction{*models.NewTransaction(acc, acc, 10, models.SELF_REWARD, utils.DefaultTimeService.UnixUint64())}),
 			},
 			wantErr: true,
 			want:    errors.New("Mine: mining task has been shutdown"),

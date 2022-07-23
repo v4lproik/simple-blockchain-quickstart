@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"io/ioutil"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"

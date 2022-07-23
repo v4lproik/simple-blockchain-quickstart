@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
@@ -29,7 +30,7 @@ type FileTransactionService struct {
 func NewFileTransactionService() *FileTransactionService {
 	return &FileTransactionService{
 		pendingTxPool: make(map[models.TransactionId]models.Transaction),
-		newPendingTxs: make(chan models.Transaction),
+		newPendingTxs: make(chan models.Transaction, 2),
 	}
 }
 

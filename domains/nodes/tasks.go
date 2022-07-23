@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -29,6 +30,8 @@ type NodeTaskManager struct {
 	blockService       services.BlockService
 }
 
+// NewNodeTaskManager handles all the background tasks needed for a node to sync its status
+// as well as mining new blocks
 func NewNodeTaskManager(
 	refreshInterval uint32,
 	nodeService *NodeService,
@@ -52,6 +55,7 @@ func NewNodeTaskManager(
 	}, nil
 }
 
+// RunMine starts mining a new block when a new transaction is being submitted
 func (n *NodeTaskManager) RunMine(ctx context.Context) {
 	Logger.Debugf("RunMine: Start mining...")
 	for {
@@ -68,38 +72,38 @@ func (n *NodeTaskManager) RunMine(ctx context.Context) {
 				},
 			})
 			if err != nil {
-				return
+				Logger.Errorf("RunMine: ")
 			}
-
 		case <-ctx.Done():
-			Logger.Debugf("RunMine: Stop mining...")
+			Logger.Debugf("RunMine: stop mining...")
 			return
 		}
 	}
 }
 
+// RunSync starts the process of syncing the list of nodes within the network as well as this node's database
 func (n *NodeTaskManager) RunSync(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * time.Duration(n.refreshIntervalInSeconds))
 
 	for {
 		select {
 		case <-ticker.C:
-			Logger.Debugf("RunSync: RunSync: looking for new nodes within the network")
+			Logger.Debugf("RunSync: looking for new nodes within the network")
 
-			// first fetch the nodes status within the network
+			// first fetch the nodes' status within the network
 			// status contains block height and other peers in network
 			nodeStatus, err := n.runFetchNodeStatus()
 			if err != nil {
-				Logger.Errorf("RunSync: RunSync: failed to lookup to new nodes: %s", err)
+				Logger.Errorf("RunSync: failed to lookup to new nodes: %s", err)
 			}
 
-			// time to synchronise our database as we have other nodes status block height
+			// time to synchronise our database as we have other nodes' status block height
 			err = n.runSyncNode(nodeStatus)
 			if err != nil {
-				Logger.Errorf("RunSync: RunSync: failed to synchronise: %s", err)
+				Logger.Errorf("RunSync: failed to synchronise: %s", err)
 			}
 		case <-ctx.Done():
-			Logger.Debugf("RunSync: RunSync: Stop looking for new nodes within the network")
+			Logger.Debugf("RunSync: Stop looking for new nodes within the network")
 			ticker.Stop()
 		}
 	}

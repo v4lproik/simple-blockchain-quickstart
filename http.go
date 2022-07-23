@@ -144,7 +144,10 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:
-			nodes.RunDomain(r, nodeService, state, fileTransactionService, blockService, apiConf.Synchronisation.RefreshIntervalInSeconds)
+			err := nodes.RunDomain(r, nodeService, state, fileTransactionService, blockService, apiConf.Synchronisation.RefreshIntervalInSeconds)
+			if err != nil {
+				Logger.Fatalf("bindFunctionalDomains: cannot start the node domain: %w", err)
+			}
 		case TRANSACTIONS:
 			transactions.RunDomain(r, state, fileTransactionService, authMiddleware)
 		case WALLETS:

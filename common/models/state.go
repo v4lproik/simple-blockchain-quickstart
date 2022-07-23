@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"github.com/jinzhu/copier"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
