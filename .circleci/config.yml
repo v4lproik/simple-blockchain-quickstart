@@ -63,11 +63,6 @@ jobs:
             fi
 
       - run:
-          name: Run Unit/Integration tests
-          command: |
-            make test -B
-
-      - run:
           name: Run code quality tests
           command: |
             go install mvdan.cc/gofumpt@latest
