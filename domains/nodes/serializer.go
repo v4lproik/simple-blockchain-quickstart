@@ -7,8 +7,7 @@ import (
 // nodes
 type NodeSerializer struct {
 	models.State
-	nodes      map[NetworkNodeAddress]NetworkNode
-	pendingTxs []models.Transaction
+	nodes map[NetworkNodeAddress]NetworkNode
 }
 
 type NetworkNodeResponse struct {

@@ -21,7 +21,6 @@ type TransactionCommandsOpts struct {
 type AddTransactionCommand struct {
 	state              models.State
 	transactionService services.TransactionService
-	blockService       services.BlockService
 	From               string `short:"f" long:"from" description:"Transaction account to get tokens from" required:"true"`
 	To                 string `short:"t" long:"to" description:"Transaction account to send tokens to" required:"true"`
 	Value              uint   `short:"v" long:"value" description:"Value of the transaction" required:"true"`
