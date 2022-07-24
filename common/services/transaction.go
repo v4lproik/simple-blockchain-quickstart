@@ -40,7 +40,7 @@ func (a *FileTransactionService) AddTx(tx *models.Transaction) error {
 	}
 
 	// add transaction to the pool
-	err := a.addTx(*tx)
+	err := a.addTxToPool(*tx)
 	if err != nil {
 		return fmt.Errorf("AddTx: failed to add transaction to mempool: %w", err)
 	}
@@ -48,17 +48,17 @@ func (a *FileTransactionService) AddTx(tx *models.Transaction) error {
 	return nil
 }
 
-func (a *FileTransactionService) addTx(tx models.Transaction) error {
+func (a *FileTransactionService) addTxToPool(tx models.Transaction) error {
 	hash, err := tx.Hash()
 	if err != nil {
-		return fmt.Errorf("addTx: %w: %s", ErrMarshalTx, err.Error())
+		return fmt.Errorf("addTxToPool: %w: %s", ErrMarshalTx, err.Error())
 	}
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	if _, ok := a.pendingTxPool[hash]; ok {
-		return fmt.Errorf("addTx: %w", ErrTxAlreadyInPool)
+		return fmt.Errorf("addTxToPool: %w", ErrTxAlreadyInPool)
 	}
 
 	a.pendingTxPool[hash] = tx
