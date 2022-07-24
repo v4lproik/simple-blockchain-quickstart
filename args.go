@@ -98,14 +98,12 @@ func addTransactionCommands(parser *flags.Parser) error {
 		return fmt.Errorf("addTransactionCommands: %w", err)
 	}
 
-	addT, _ := commands.NewAddTransactionCommand(state)
 	listT, _ := commands.NewListTransactionCommand(state)
 	_, err = parser.AddCommand(
 		"transaction",
 		"transaction utility commands including: add, list",
 		"Utilities developed to ease the operations and debugging of transactions.",
 		&commands.TransactionCommands{
-			Add:  *addT,
 			List: *listT,
 		},
 	)

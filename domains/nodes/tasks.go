@@ -33,6 +33,7 @@ type NodeTaskManager struct {
 	blockService       services.BlockService
 
 	isCurrentlyMining bool
+	syncedBlock       chan models.Block
 }
 
 // NewNodeTaskManager handles all the background tasks needed for a node to sync its status
@@ -59,25 +60,33 @@ func NewNodeTaskManager(
 		state:                            state,
 		transactionService:               transactionService,
 		blockService:                     blockService,
+		syncedBlock:                      make(chan models.Block),
 	}, nil
 }
 
 // RunMine starts mining a new block when a new transaction is being submitted
 func (n *NodeTaskManager) RunMine(ctx context.Context) {
 	Logger.Debugf("RunMine: Start mining process...")
+	// ticker
 	ticker := time.NewTicker(time.Second * time.Duration(n.createNewBlockIntervalInSeconds))
+
+	// shared variables
+	var miningCancelCtx context.CancelFunc
 
 	for {
 		select {
 		case <-ticker.C:
-			txs := n.transactionService.GetTxs()
+			txs := n.transactionService.GetPendingTxs()
 			if len(txs) > 0 && !n.isCurrentlyMining {
 				n.isCurrentlyMining = true
 
+				var miningCtx context.Context
 				var block *models.Block
 				var err error
+				miningCtx, miningCancelCtx = context.WithCancel(context.Background())
+
 				// mine a new block
-				if block, err = n.blockService.Mine(context.Background(), models.PendingBlock{
+				if block, err = n.blockService.Mine(miningCtx, models.PendingBlock{
 					Parent:       n.state.GetLatestBlockHash(),
 					Height:       n.state.GetLatestBlockHeight() + 1,
 					Time:         utils.DefaultTimeService.UnixUint64(),
@@ -91,13 +100,34 @@ func (n *NodeTaskManager) RunMine(ctx context.Context) {
 						Logger.Errorf("RunMine: failed to add block to state: %s", err)
 					} else {
 						// if all ok, remove the mined transactions
-						n.transactionService.RemoveTxs(funk.Keys(txs).([]models.TransactionId))
+						n.transactionService.RemovePendingTxs(funk.Keys(txs).([]models.TransactionId))
 					}
 				}
 				n.isCurrentlyMining = false
 			}
+		case block := <-n.syncedBlock:
+			// if we are mining then we might want to remove any pendingTx that is currently been mined
+			if n.isCurrentlyMining {
+				// if there's any pendingTx that has already been mined, we need to remove them from
+				// our pendingTx pool
+				pendingTxs := n.transactionService.GetPendingTxs()
+				var hasFoundAPendingTxInSyncBlock bool
+				for _, tx := range block.Txs {
+					txHash, _ := tx.Hash()
+					if _, exists := pendingTxs[txHash]; exists {
+						// we need to cancel the mining and remove the tx that has been included
+						// in the freshly synced block
+						if !hasFoundAPendingTxInSyncBlock {
+							miningCancelCtx()
+							hasFoundAPendingTxInSyncBlock = true
+						}
+						n.transactionService.RemovePendingTx(txHash)
+					}
+				}
+			}
 		case <-ctx.Done():
 			Logger.Debugf("RunMine: stop mining process...")
+			miningCancelCtx()
 			return
 		}
 	}
@@ -223,30 +253,37 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 func (n *NodeTaskManager) runSyncNode(nodeStatus map[NetworkNodeAddress]NetworkNodeStatus) error {
 	Logger.Debugf("runSyncNode: synchronisation has started")
 
+	// if no node found in the network, let's stop sync
+	if len(nodeStatus) == 0 {
+		return nil
+	}
+
 	// get current block height
 	state := n.state
 	currentHeight := state.GetLatestBlockHeight()
 
 	// find the node with the highest block height and higher than ours
-	// if condition met, then synchronise, otherwise do not do anything
-	var nodeToSynchFrom map[NetworkNodeAddress]NetworkNodeStatus
+	// if condition met, then sync, otherwise do not do anything
+	var highestHeight uint64
+	var nodeToSyncFrom map[NetworkNodeAddress]NetworkNodeStatus
 	for address, status := range nodeStatus {
-		if currentHeight < status.Height {
-			if nodeToSynchFrom == nil {
-				nodeToSynchFrom = make(map[NetworkNodeAddress]NetworkNodeStatus, 1)
+		if currentHeight < status.Height && highestHeight < status.Height {
+			if nodeToSyncFrom == nil {
+				nodeToSyncFrom = make(map[NetworkNodeAddress]NetworkNodeStatus, 1)
 			}
-			nodeToSynchFrom[address] = status
+			nodeToSyncFrom[address] = status
+			highestHeight = status.Height
 		}
 	}
 
 	// skip sync if couldn't find any node with a higher block height
-	if nodeToSynchFrom == nil {
+	if nodeToSyncFrom == nil {
 		Logger.Debugf("runSyncNode: couldn't find a node with a higher block height than us")
 		return nil
 	}
 
 	// start sync the node
-	for address, status := range nodeToSynchFrom {
+	for address, status := range nodeToSyncFrom {
 		missingBlockCount := status.Height - currentHeight
 		currentHash := state.GetLatestBlockHash()
 

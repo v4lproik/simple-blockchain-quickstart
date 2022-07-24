@@ -56,7 +56,7 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 	}
 
 	// add to state
-	err := env.transactionService.AddTx(tx)
+	err := env.transactionService.AddPendingTx(*tx)
 	if err != nil {
 		code := http.StatusInternalServerError
 		if errors.As(err, &services.ErrMarshalTx) {

@@ -14,10 +14,10 @@ var (
 )
 
 type TransactionService interface {
-	AddTx(*models.Transaction) error
-	GetTxs() map[models.TransactionId]models.Transaction
-	RemoveTx(models.TransactionId)
-	RemoveTxs([]models.TransactionId)
+	AddPendingTx(models.Transaction) error
+	GetPendingTxs() map[models.TransactionId]models.Transaction
+	RemovePendingTx(models.TransactionId)
+	RemovePendingTxs([]models.TransactionId)
 }
 
 type FileTransactionService struct {
@@ -33,32 +33,32 @@ func NewFileTransactionService() *FileTransactionService {
 	}
 }
 
-// AddTx adds a transaction to the pool
-func (a *FileTransactionService) AddTx(tx *models.Transaction) error {
-	if tx == nil {
-		return errors.New("AddTx: nil transaction")
-	}
-
+// AddPendingTx adds a transaction to the pool
+func (a *FileTransactionService) AddPendingTx(tx models.Transaction) error {
 	// add transaction to the pool
-	err := a.addTxToPool(*tx)
+	err := a.addPendingTxToPool(tx)
 	if err != nil {
-		return fmt.Errorf("AddTx: failed to add transaction to mempool: %w", err)
+		return fmt.Errorf("AddPendingTx: failed to add transaction to mempool: %w", err)
 	}
 
 	return nil
 }
 
-func (a *FileTransactionService) addTxToPool(tx models.Transaction) error {
+// addPendingTxToPool check whether it's a valid transaction and eventually add it to the pool
+func (a *FileTransactionService) addPendingTxToPool(tx models.Transaction) error {
 	hash, err := tx.Hash()
 	if err != nil {
-		return fmt.Errorf("addTxToPool: %w: %s", ErrMarshalTx, err.Error())
+		return fmt.Errorf("addPendingTxToPool: %w: %s", ErrMarshalTx, err.Error())
 	}
+
+	// TODO: Implement verifyTx(tx models.Transaction).
+	// Needs models.state refacto
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	if _, ok := a.pendingTxPool[hash]; ok {
-		return fmt.Errorf("addTxToPool: %w", ErrTxAlreadyInPool)
+		return fmt.Errorf("addPendingTxToPool: %w", ErrTxAlreadyInPool)
 	}
 
 	a.pendingTxPool[hash] = tx
@@ -66,24 +66,24 @@ func (a *FileTransactionService) addTxToPool(tx models.Transaction) error {
 	return nil
 }
 
-// GetTxs get pending transactions
-func (a *FileTransactionService) GetTxs() map[models.TransactionId]models.Transaction {
+// GetPendingTxs get pending transactions
+func (a *FileTransactionService) GetPendingTxs() map[models.TransactionId]models.Transaction {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	return a.pendingTxPool
 }
 
-// RemoveTx remove transaction from pool
-func (a *FileTransactionService) RemoveTx(id models.TransactionId) {
+// RemovePendingTx remove transaction from pool
+func (a *FileTransactionService) RemovePendingTx(id models.TransactionId) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	delete(a.pendingTxPool, id)
 }
 
-// RemoveTx remove transactions from pool
-func (a *FileTransactionService) RemoveTxs(ids []models.TransactionId) {
+// RemovePendingTxs remove transactions from pool
+func (a *FileTransactionService) RemovePendingTxs(ids []models.TransactionId) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
