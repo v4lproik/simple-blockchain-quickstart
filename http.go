@@ -24,11 +24,11 @@ type Domain string
 
 const (
 	AUTH         Domain = "AUTH"
-	BALANCES            = "BALANCES"
-	HEALTHZ             = "HEALTHZ"
-	NODES               = "NODES"
-	TRANSACTIONS        = "TRANSACTIONS"
-	WALLETS             = "WALLETS"
+	BALANCES     Domain = "BALANCES"
+	HEALTHZ      Domain = "HEALTHZ"
+	NODES        Domain = "NODES"
+	TRANSACTIONS Domain = "TRANSACTIONS"
+	WALLETS      Domain = "WALLETS"
 )
 
 var apiConf = ApiConf{}
