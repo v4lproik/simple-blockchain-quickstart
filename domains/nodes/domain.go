@@ -17,7 +17,8 @@ func RunDomain(
 	state models.State,
 	transactionService services.TransactionService,
 	blockService services.BlockService,
-	taskManagerSyncInterval uint32,
+	syncNodeRefreshIntervalInSeconds uint32,
+	createNewBlockIntervalInSeconds uint32,
 	middlewares ...gin.HandlerFunc,
 ) error {
 	v1 := r.Group(NODES_DOMAIN_URL)
@@ -34,7 +35,8 @@ func RunDomain(
 
 	// run background tasks
 	manager, err := NewNodeTaskManager(
-		taskManagerSyncInterval,
+		syncNodeRefreshIntervalInSeconds,
+		createNewBlockIntervalInSeconds,
 		nodeService,
 		state,
 		transactionService,

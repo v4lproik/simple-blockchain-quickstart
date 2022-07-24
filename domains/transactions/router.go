@@ -38,14 +38,6 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 		return
 	}
 
-	// check if the node is available to accept new transactions
-	// the buffered channel is limited to a certain amount of bytes
-	newPendingTxs := env.transactionService.NewPendingTxs()
-	if len(newPendingTxs) == cap(newPendingTxs) {
-		AbortWithError(c, NewError(http.StatusServiceUnavailable, "transaction cannot be added"))
-		return
-	}
-
 	// create a transaction
 	from, _ := models.NewAccount(params.From)
 	to, _ := models.NewAccount(params.To)

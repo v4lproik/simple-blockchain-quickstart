@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
@@ -21,19 +23,23 @@ import (
 type BlockHeight uint64
 
 type NodeTaskManager struct {
-	refreshIntervalInSeconds uint32
+	syncNodeRefreshIntervalInSeconds uint32
+	createNewBlockIntervalInSeconds  uint32
 
 	state models.State
 
 	nodeService        *NodeService
 	transactionService services.TransactionService
 	blockService       services.BlockService
+
+	isCurrentlyMining bool
 }
 
 // NewNodeTaskManager handles all the background tasks needed for a node to sync its status
 // as well as mining new blocks
 func NewNodeTaskManager(
-	refreshInterval uint32,
+	syncNodeRefreshIntervalInSeconds uint32,
+	createNewBlockIntervalInSeconds uint32,
 	nodeService *NodeService,
 	state models.State,
 	transactionService services.TransactionService,
@@ -47,35 +53,51 @@ func NewNodeTaskManager(
 	}
 
 	return &NodeTaskManager{
-		refreshIntervalInSeconds: refreshInterval,
-		nodeService:              nodeService,
-		state:                    state,
-		transactionService:       transactionService,
-		blockService:             blockService,
+		syncNodeRefreshIntervalInSeconds: syncNodeRefreshIntervalInSeconds,
+		createNewBlockIntervalInSeconds:  createNewBlockIntervalInSeconds,
+		nodeService:                      nodeService,
+		state:                            state,
+		transactionService:               transactionService,
+		blockService:                     blockService,
 	}, nil
 }
 
 // RunMine starts mining a new block when a new transaction is being submitted
 func (n *NodeTaskManager) RunMine(ctx context.Context) {
-	Logger.Debugf("RunMine: Start mining...")
+	Logger.Debugf("RunMine: Start mining process...")
+	ticker := time.NewTicker(time.Second * time.Duration(n.createNewBlockIntervalInSeconds))
+
 	for {
 		select {
-		case pendingTx := <-n.transactionService.NewPendingTxs():
-			Logger.Debugf("RunMine: Received new transaction...")
-			_, err := n.blockService.Mine(context.Background(), models.PendingBlock{
-				Parent:       n.state.GetLatestBlockHash(),
-				Height:       n.state.GetLatestBlockHeight() + 1,
-				Time:         utils.DefaultTimeService.UnixUint64(),
-				MinerAddress: n.blockService.ThisNodeMiningAddress(),
-				Txs: []models.Transaction{
-					*models.NewTransaction(pendingTx.From, pendingTx.To, pendingTx.Value, pendingTx.Reason, pendingTx.Time),
-				},
-			})
-			if err != nil {
-				Logger.Errorf("RunMine: ")
+		case <-ticker.C:
+			txs := n.transactionService.GetTxs()
+			if len(txs) > 0 && !n.isCurrentlyMining {
+				n.isCurrentlyMining = true
+
+				var block *models.Block
+				var err error
+				// mine a new block
+				if block, err = n.blockService.Mine(context.Background(), models.PendingBlock{
+					Parent:       n.state.GetLatestBlockHash(),
+					Height:       n.state.GetLatestBlockHeight() + 1,
+					Time:         utils.DefaultTimeService.UnixUint64(),
+					MinerAddress: n.blockService.ThisNodeMiningAddress(),
+					Txs:          txsMapToArr(txs),
+				}); err != nil {
+					Logger.Errorf("RunMine: failed to mine a block: %s", err)
+				} else {
+					// if all ok, add block to database
+					if err = n.state.AddBlock(*block); err != nil {
+						Logger.Errorf("RunMine: failed to add block to state: %s", err)
+					} else {
+						// if all ok, remove the mined transactions
+						n.transactionService.RemoveTxs(funk.Keys(txs).([]models.TransactionId))
+					}
+				}
+				n.isCurrentlyMining = false
 			}
 		case <-ctx.Done():
-			Logger.Debugf("RunMine: stop mining...")
+			Logger.Debugf("RunMine: stop mining process...")
 			return
 		}
 	}
@@ -83,7 +105,7 @@ func (n *NodeTaskManager) RunMine(ctx context.Context) {
 
 // RunSync starts the process of syncing the list of nodes within the network as well as this node's database
 func (n *NodeTaskManager) RunSync(ctx context.Context) {
-	ticker := time.NewTicker(time.Second * time.Duration(n.refreshIntervalInSeconds))
+	ticker := time.NewTicker(time.Second * time.Duration(n.syncNodeRefreshIntervalInSeconds))
 
 	for {
 		select {
@@ -342,16 +364,7 @@ func getBlocks(r *http.Response) ([]models.Block, error) {
 
 	blocks = make([]models.Block, len(blocksRes.Blocks))
 	for i, blockRes := range blocksRes.Blocks {
-		// init block structure
-		block := models.Block{
-			Header: models.BlockHeader{
-				Parent: blockRes.Header.Parent,
-				Height: blockRes.Header.Height,
-				Time:   blockRes.Header.Time,
-			},
-		}
-
-		// add transactions
+		// format transactions
 		txs := make([]models.Transaction, len(blockRes.Txs))
 		for y, tx := range blockRes.Txs {
 			txs[y] = models.Transaction{
@@ -359,13 +372,19 @@ func getBlocks(r *http.Response) ([]models.Block, error) {
 				To:     tx.To,
 				Value:  tx.Value,
 				Reason: tx.Reason,
+				Time:   tx.Time,
 			}
 		}
-		block.Txs = txs
-
+		// create block
+		block := models.NewBlock(
+			blockRes.Header.Parent,
+			blockRes.Header.Height,
+			blockRes.Header.Nonce,
+			blockRes.Header.Time,
+			txs,
+		)
 		// add to array of blocks
 		blocks[i] = block
 	}
-
 	return blocks, nil
 }

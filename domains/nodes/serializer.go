@@ -61,11 +61,13 @@ type TransactionResponse struct {
 	To     models.Account `json:"to"`
 	Value  uint           `json:"value"`
 	Reason string         `json:"reason"`
+	Time   uint64         `json:"time"`
 }
 
 type BlockHeaderResponse struct {
 	Parent models.Hash `json:"parent"`
 	Height uint64      `json:"height"`
+	Nonce  uint32      `json:"nonce"`
 	Time   uint64      `json:"time"`
 }
 
@@ -87,6 +89,7 @@ func (n *BlockSerializer) Response() BlockResponse {
 		Header: BlockHeaderResponse{
 			Parent: block.Header.Parent,
 			Height: block.Header.Height,
+			Nonce:  block.Header.Nonce,
 			Time:   block.Header.Time,
 		},
 	}
@@ -99,6 +102,7 @@ func (n *BlockSerializer) Response() BlockResponse {
 			To:     tx.To,
 			Value:  tx.Value,
 			Reason: tx.Reason,
+			Time:   tx.Time,
 		}
 	}
 	response.Txs = txRes

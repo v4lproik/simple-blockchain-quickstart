@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
@@ -14,23 +15,21 @@ var (
 
 type TransactionService interface {
 	AddTx(*models.Transaction) error
-	addTx(models.Transaction) error
+	GetTxs() map[models.TransactionId]models.Transaction
 	RemoveTx(models.TransactionId)
-
-	NewPendingTxs() chan models.Transaction
+	RemoveTxs([]models.TransactionId)
 }
 
 type FileTransactionService struct {
-	pendingTxPool map[models.TransactionId]models.Transaction
+	mu sync.Mutex
 
-	newPendingTxs chan models.Transaction
+	pendingTxPool map[models.TransactionId]models.Transaction
 }
 
 // NewFileTransactionService default constructor
 func NewFileTransactionService() *FileTransactionService {
 	return &FileTransactionService{
 		pendingTxPool: make(map[models.TransactionId]models.Transaction),
-		newPendingTxs: make(chan models.Transaction, 2),
 	}
 }
 
@@ -46,8 +45,6 @@ func (a *FileTransactionService) AddTx(tx *models.Transaction) error {
 		return fmt.Errorf("AddTx: failed to add transaction to mempool: %w", err)
 	}
 
-	// send the event that there's a new tx ready to be mined
-	a.newPendingTxs <- *tx
 	return nil
 }
 
@@ -56,6 +53,9 @@ func (a *FileTransactionService) addTx(tx models.Transaction) error {
 	if err != nil {
 		return fmt.Errorf("addTx: %w: %s", ErrMarshalTx, err.Error())
 	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
 	if _, ok := a.pendingTxPool[hash]; ok {
 		return fmt.Errorf("addTx: %w", ErrTxAlreadyInPool)
@@ -66,11 +66,28 @@ func (a *FileTransactionService) addTx(tx models.Transaction) error {
 	return nil
 }
 
+// GetTxs get pending transactions
+func (a *FileTransactionService) GetTxs() map[models.TransactionId]models.Transaction {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.pendingTxPool
+}
+
 // RemoveTx remove transaction from pool
 func (a *FileTransactionService) RemoveTx(id models.TransactionId) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	delete(a.pendingTxPool, id)
 }
 
-func (a *FileTransactionService) NewPendingTxs() chan models.Transaction {
-	return a.newPendingTxs
+// RemoveTx remove transactions from pool
+func (a *FileTransactionService) RemoveTxs(ids []models.TransactionId) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	for _, id := range ids {
+		delete(a.pendingTxPool, id)
+	}
 }

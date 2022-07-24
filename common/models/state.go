@@ -232,13 +232,13 @@ func (s *FromFileState) Persist() (Hash, error) {
 func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 	blockDBJson, err := json.Marshal(block)
 	if err != nil {
-		return fmt.Errorf("Persist: failed to marshall the block: %w", err)
+		return fmt.Errorf("persistBlockToDB: failed to marshall the block: %w", err)
 	}
 
 	// add to the DB the new block as well as a new line
 	_, err = s.dbFile.Write(append(blockDBJson, '\n'))
 	if err != nil {
-		return fmt.Errorf("Persist: failed to append block to file: %w", err)
+		return fmt.Errorf("persistBlockToDB: failed to append block to file: %w", err)
 	}
 	return nil
 }
