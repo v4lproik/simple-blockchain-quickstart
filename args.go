@@ -1,9 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"os"
-
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
@@ -62,19 +61,18 @@ func displayAppConfiguration() {
 }
 
 // checkArgs verifies the variables passed in cli
-func checkArgs() {
+func checkArgs() error {
 	// check node env variable
 	env = EnvVal(opts.Environment)
 	if !env.isValid() {
-		fmt.Println("environment " + opts.Environment + " is not accepted. Choose from [dev, prod]. Exiting")
-		os.Exit(1)
+		return errors.New("checkArgs: environment " + opts.Environment + " is not accepted. Choose from [dev, prod]. Exiting")
 	}
 	// check miner address
 	_, err := models.NewAccount(opts.MinerAddress)
 	if err != nil {
-		fmt.Println("miner address " + opts.MinerAddress + " is not accepted. Use an Ethereum based address. Exiting")
-		os.Exit(1)
+		return errors.New("checkArgs: miner address " + opts.MinerAddress + " is not accepted. Use an Ethereum based address. Exiting")
 	}
+	return nil
 }
 
 // general commands
