@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	parser "github.com/caarlos0/env/v6"
@@ -64,16 +68,26 @@ func runHttpServer() {
 	// start the functional domains
 	bindFunctionalDomains(r)
 
-	// start server according to the configuration passed in parameter or EnvVal variables
 	serverOpts := apiConf.Server.Options
-	serverAddress := net.JoinHostPort(apiConf.Server.Address, fmt.Sprintf("%d", apiConf.Server.Port))
-	if serverOpts.IsSsl {
-		Logger.Info("runHttpServer: start server with tls")
-		r.RunTLS(serverAddress, serverOpts.CertFile, serverOpts.KeyFile)
-	} else {
-		Logger.Info("runHttpServer: start server without tls")
-		r.Run(serverAddress)
+	server := &http.Server{
+		Addr:    net.JoinHostPort(apiConf.Server.Address, fmt.Sprintf("%d", apiConf.Server.Port)),
+		Handler: r.Handler(),
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		if serverOpts.IsSsl {
+			Logger.Info("runHttpServer: start server with tls")
+			server.ListenAndServeTLS(serverOpts.CertFile, serverOpts.KeyFile)
+		} else {
+			Logger.Info("runHttpServer: start server without tls")
+			server.ListenAndServe()
+		}
+	}()
+
+	gracefullyShutdownServer(ctx, server)
 }
 
 func bindFunctionalDomains(r *gin.Engine) {
@@ -165,4 +179,19 @@ func bindFunctionalDomains(r *gin.Engine) {
 			Logger.Fatalf("bindFunctionalDomains: the functional domain %s is unknown", domain)
 		}
 	}
+}
+
+func gracefullyShutdownServer(ctx context.Context, server *http.Server) {
+	<-ctx.Done()
+	Logger.Infof("runHttpServer: trying to gracefully close http server...")
+
+	timeoutShutdown := 2
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutShutdown)*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		Logger.Fatalf("runHttpServer: couldn't gracefully stop http server: %s", err)
+	}
+
+	<-ctx.Done()
+	Logger.Info("runHttpServer: http server closed")
 }
