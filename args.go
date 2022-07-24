@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
