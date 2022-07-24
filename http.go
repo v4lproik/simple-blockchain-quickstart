@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"time"
 
 	parser "github.com/caarlos0/env/v6"
@@ -65,14 +66,13 @@ func runHttpServer() {
 
 	// start server according to the configuration passed in parameter or EnvVal variables
 	serverOpts := apiConf.Server.Options
-	serverPort := apiConf.Server.Port
-	serverAddress := apiConf.Server.Address
+	serverAddress := net.JoinHostPort(apiConf.Server.Address, fmt.Sprintf("%d", apiConf.Server.Port))
 	if serverOpts.IsSsl {
 		Logger.Info("runHttpServer: start server with tls")
-		r.RunTLS(fmt.Sprintf(":%d", serverPort), serverOpts.CertFile, serverOpts.KeyFile)
+		r.RunTLS(serverAddress, serverOpts.CertFile, serverOpts.KeyFile)
 	} else {
 		Logger.Info("runHttpServer: start server without tls")
-		r.Run(fmt.Sprintf("%s:%d", serverAddress, serverPort))
+		r.Run(serverAddress)
 	}
 }
 
