@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/jinzhu/copier"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
@@ -200,7 +202,8 @@ func (s *FromFileState) Persist() (Hash, error) {
 	block := NewBlock(
 		s.latestBlockHash,
 		s.latestBlock.Header.Height+1,
-		uint64(time.Now().Unix()),
+		0,
+		utils.DefaultTimeService.UnixUint64(),
 		s.transactionsPool,
 	)
 	// generate block hash
@@ -229,13 +232,13 @@ func (s *FromFileState) Persist() (Hash, error) {
 func (s *FromFileState) persistBlockToDB(block BlockDB) error {
 	blockDBJson, err := json.Marshal(block)
 	if err != nil {
-		return fmt.Errorf("Persist: failed to marshall the block: %w", err)
+		return fmt.Errorf("persistBlockToDB: failed to marshall the block: %w", err)
 	}
 
 	// add to the DB the new block as well as a new line
 	_, err = s.dbFile.Write(append(blockDBJson, '\n'))
 	if err != nil {
-		return fmt.Errorf("Persist: failed to append block to file: %w", err)
+		return fmt.Errorf("persistBlockToDB: failed to append block to file: %w", err)
 	}
 	return nil
 }

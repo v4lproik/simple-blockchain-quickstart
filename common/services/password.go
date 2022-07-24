@@ -1,12 +1,13 @@
 package services
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -40,7 +41,7 @@ func NewDefaultPasswordService() PasswordService {
 }
 
 func (c PasswordService) GenerateHash(password string) (hash string, err error) {
-	salt, err := generateRandomBytes(c.saltLength)
+	salt, err := utils.GenerateRandomBytes(c.saltLength)
 	if err != nil {
 		return "", err
 	}
@@ -102,14 +103,4 @@ func (p PasswordService) decodeHash(encodedHash string) ([]byte, []byte, error) 
 	}
 
 	return salt, hash, nil
-}
-
-func generateRandomBytes(n uint32) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }

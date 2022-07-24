@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"encoding/json"
+	"net/http"
+
+	. "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
@@ -20,7 +22,7 @@ func UpdateUserContext(c *gin.Context, user models.User) {
 	c.Set("my_user", user)
 }
 
-func AuthWebSessionMiddleware(auto401 bool, errorBuilder ErrorBuilder, jwtService *services.JwtService) gin.HandlerFunc {
+func AuthWebSessionMiddleware(auto401 bool, jwtService *services.JwtService) gin.HandlerFunc {
 	Logger.Debugf("authentication is %s", auto401)
 	return func(c *gin.Context) {
 		// if authentication not required
@@ -33,7 +35,7 @@ func AuthWebSessionMiddleware(auto401 bool, errorBuilder ErrorBuilder, jwtServic
 		// extract token
 		jwtToken := c.Request.Header.Get(AUTH_HEADER)
 		if jwtToken == "" {
-			AbortWithError(c, *errorBuilder.New(401, "authentication token cannot be found"))
+			AbortWithError(c, NewError(http.StatusUnauthorized, "authentication token cannot be found"))
 			return
 		}
 		// verify the token if present
@@ -43,7 +45,7 @@ func AuthWebSessionMiddleware(auto401 bool, errorBuilder ErrorBuilder, jwtServic
 			if err.Error() == "Token is expired" {
 				context = "token is expired"
 			}
-			AbortWithError(c, *errorBuilder.New(401, "authentication token is not valid", context))
+			AbortWithError(c, NewError(http.StatusUnauthorized, "authentication token is not valid", context))
 			return
 		}
 
@@ -51,7 +53,7 @@ func AuthWebSessionMiddleware(auto401 bool, errorBuilder ErrorBuilder, jwtServic
 		if claims, ok := authToken.Claims.(jwt.MapClaims); ok && authToken.Valid {
 			data := claims["dat"]
 			if data == nil {
-				AbortWithError(c, *errorBuilder.New(401, "authentication token is not valid", "there's no data"))
+				AbortWithError(c, NewError(http.StatusUnauthorized, "authentication token is not valid", "there's no data"))
 				return
 			}
 
@@ -59,7 +61,7 @@ func AuthWebSessionMiddleware(auto401 bool, errorBuilder ErrorBuilder, jwtServic
 			var user models.User
 			err := json.Unmarshal([]byte(data.(string)), &user)
 			if err != nil {
-				AbortWithError(c, *errorBuilder.New(500, "cannot parse payload"))
+				AbortWithError(c, NewError(http.StatusInternalServerError, "cannot parse payload"))
 				return
 			}
 

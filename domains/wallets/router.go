@@ -3,15 +3,16 @@ package wallets
 import (
 	"net/http"
 
+	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
+	. "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/gin-gonic/gin"
-	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
 type WalletsEnv struct {
-	Keystore     KeystoreService
-	ErrorBuilder ErrorBuilder
+	Keystore services.KeystoreService
 }
 
 const CREATE_WALLET_ACC_ENDPOINT = "/"
@@ -29,15 +30,15 @@ func (env *WalletsEnv) CreateWallet(c *gin.Context) {
 	errMsg := "wallet cannot be created"
 
 	// check params
-	if err := ShouldBind(c, env.ErrorBuilder, errMsg, params); err != nil {
-		AbortWithError(c, *err)
+	if err := ShouldBind(c, errMsg, params); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
 	acc, err := env.Keystore.NewKeystoreAccount(params.Password)
 	if err != nil {
 		Logger.Errorf("CreateWallet: failed to generate a new wallet account: %s", err)
-		AbortWithError(c, *env.ErrorBuilder.New(http.StatusInternalServerError, errMsg, err))
+		AbortWithError(c, NewError(http.StatusInternalServerError, errMsg, err))
 		return
 	}
 

@@ -1,4 +1,4 @@
-package utils
+package main
 
 type ApiConf struct {
 	Env    string `env:"SBQ_ENV,required"`
@@ -39,5 +39,12 @@ type ApiConf struct {
 				JkmsRefreshCacheTimeoutInSec   int    `env:"SBQ_JWT_JKMS_REFRESH_CACHE_TIMEOUT_IN_SEC,required"`
 			}
 		}
+	}
+	Consensus struct {
+		Complexity                      uint32 `env:"SBQ_CONSENSUS_COMPLEXITY,required"`
+		CreateNewBlockIntervalInSeconds uint32 `env:"SBQ_CONSENSUS_CREATE_NEW_BLOCK_INTERVAL_IN_SEC,required"`
+	}
+	Synchronisation struct {
+		RefreshIntervalInSeconds uint32 `env:"SBQ_SYNCHRONISATION_INTERVAL_IN_SEC,required"`
 	}
 }

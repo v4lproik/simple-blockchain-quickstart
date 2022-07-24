@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/v4lproik/simple-blockchain-quickstart/commands"
@@ -35,7 +35,7 @@ func (e EnvVal) isProd() bool {
 }
 
 var opts struct {
-	RunAsHttpserver      bool   `short:"r" long:"run_as_http_server" description:"Run the application as an http server" required:"false"`
+	RunAsHttpserver      bool   `short:"r" long:"run_as_http_server" description:"RunSync the application as an http server" required:"false"`
 	UsersFilePath        string `short:"u" long:"users_file_path" description:"Users file path" required:"true"`
 	GenesisFilePath      string `short:"g" long:"genesis_file_path" description:"Genesis file path" required:"true"`
 	TransactionsFilePath string `short:"d" long:"transactions_file_path" description:"Transactions file path" required:"true"`
@@ -43,6 +43,7 @@ var opts struct {
 	KeystoreDirPath      string `short:"k" long:"keystore_dir_path" description:"Keystore dir path" required:"true"`
 	LogFilePath          string `short:"l" long:"log_file_path" description:"Where application logs will be written. If this value is not specified, the logs will be displayed to the console" required:"false"`
 	Environment          string `short:"e" long:"environment" description:"Set the environment variable. Accepted values are [dev, prod]" required:"false" default:"dev"`
+	MinerAddress         string `short:"m" long:"miner_address" description:"Set miner address" required:"false"`
 }
 
 func displayAppConfiguration() {
@@ -52,6 +53,7 @@ func displayAppConfiguration() {
 	Logger.Infof("Users file: %s", opts.UsersFilePath)
 	Logger.Infof("Nodes file: %s", opts.NodesFilePath)
 	Logger.Infof("Keystore dir: %s", opts.KeystoreDirPath)
+	Logger.Infof("This node miner address: %s", opts.MinerAddress)
 	if opts.LogFilePath != "" {
 		Logger.Infof("Output in log file: %s", opts.LogFilePath)
 	} else {
@@ -59,12 +61,19 @@ func displayAppConfiguration() {
 	}
 }
 
-func checkArgs() {
+// checkArgs verifies the variables passed in cli
+func checkArgs() error {
+	// check node env variable
 	env = EnvVal(opts.Environment)
 	if !env.isValid() {
-		fmt.Println("environment " + opts.Environment + " is not accepted. Choose from [dev, prod]. Exiting")
-		os.Exit(1)
+		return errors.New("checkArgs: environment " + opts.Environment + " is not accepted. Choose from [dev, prod]. Exiting")
 	}
+	// check miner address
+	_, err := models.NewAccount(opts.MinerAddress)
+	if err != nil {
+		return errors.New("checkArgs: miner address " + opts.MinerAddress + " is not accepted. Use an Ethereum based address. Exiting")
+	}
+	return nil
 }
 
 // general commands
@@ -89,14 +98,12 @@ func addTransactionCommands(parser *flags.Parser) error {
 		return fmt.Errorf("addTransactionCommands: %w", err)
 	}
 
-	addT, _ := commands.NewAddTransactionCommand(state)
 	listT, _ := commands.NewListTransactionCommand(state)
 	_, err = parser.AddCommand(
 		"transaction",
 		"transaction utility commands including: add, list",
 		"Utilities developed to ease the operations and debugging of transactions.",
 		&commands.TransactionCommands{
-			Add:  *addT,
 			List: *listT,
 		},
 	)

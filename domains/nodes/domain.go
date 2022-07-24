@@ -2,18 +2,25 @@ package nodes
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
 
 const NODES_DOMAIN_URL = "/api/nodes"
 
-func RunDomain(r *gin.Engine, nodeService *NodeService, state models.State,
-	blockService services.BlockService, middlewares ...gin.HandlerFunc,
-) {
+func RunDomain(
+	r *gin.Engine,
+	nodeService *NodeService,
+	state models.State,
+	transactionService services.TransactionService,
+	blockService services.BlockService,
+	syncNodeRefreshIntervalInSeconds uint32,
+	createNewBlockIntervalInSeconds uint32,
+	middlewares ...gin.HandlerFunc,
+) error {
 	v1 := r.Group(NODES_DOMAIN_URL)
 	for _, middleware := range middlewares {
 		v1.Use(middleware)
@@ -24,11 +31,25 @@ func RunDomain(r *gin.Engine, nodeService *NodeService, state models.State,
 		nodeService:  nodeService,
 		state:        state,
 		blockService: blockService,
-		errorBuilder: common.NewErrorBuilder(),
 	})
 
 	// run background tasks
-	manager, _ := NewNodeTaskManager(5, nodeService, state, blockService)
+	manager, err := NewNodeTaskManager(
+		syncNodeRefreshIntervalInSeconds,
+		createNewBlockIntervalInSeconds,
+		nodeService,
+		state,
+		transactionService,
+		blockService,
+	)
+	if err != nil {
+		return fmt.Errorf("RunDomain: node task manager cannot start: %w", err)
+	}
+
 	ctx := context.Background()
-	go manager.Run(ctx)
+	go manager.RunMine(ctx)
+
+	ctx = context.Background()
+	go manager.RunSync(ctx)
+	return nil
 }

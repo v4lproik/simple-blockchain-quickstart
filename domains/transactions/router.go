@@ -1,10 +1,12 @@
 package transactions
 
 import (
+	"errors"
 	"net/http"
 
+	. "github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/gin-gonic/gin"
-	. "github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	. "github.com/v4lproik/simple-blockchain-quickstart/domains"
@@ -15,7 +17,6 @@ const ADD_TRANSACTIONS_ENDPOINT = "/"
 type TransactionsEnv struct {
 	state              models.State
 	transactionService services.TransactionService
-	errorBuilder       ErrorBuilder
 }
 
 func TransactionsRegister(router *gin.RouterGroup, env *TransactionsEnv) {
@@ -32,8 +33,8 @@ type AddTransactionParams struct {
 func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 	params := &AddTransactionParams{}
 	// check params
-	if err := ShouldBind(c, env.errorBuilder, "transaction cannot be added", params); err != nil {
-		AbortWithError(c, *err)
+	if err := ShouldBind(c, "transaction cannot be added", params); err != nil {
+		AbortWithError(c, err)
 		return
 	}
 
@@ -45,24 +46,25 @@ func (env TransactionsEnv) AddTransaction(c *gin.Context) {
 		to,
 		params.Value,
 		string(params.Reason),
+		DefaultTimeService.UnixUint64(),
 	)
 
 	state := env.state
 	if len(state.Balances()) == 0 {
-		AbortWithError(c, *env.errorBuilder.New(http.StatusNotFound, "balances could not be found"))
+		AbortWithError(c, NewError(http.StatusNotFound, "balances could not be found"))
 		return
 	}
 
 	// add to state
-	hash, err := env.transactionService.AddTransaction(state, tx)
+	err := env.transactionService.AddPendingTx(*tx)
 	if err != nil {
-		AbortWithError(c, *env.errorBuilder.New(http.StatusInternalServerError, "transaction cannot be added", err))
+		code := http.StatusInternalServerError
+		if errors.As(err, &services.ErrMarshalTx) {
+			code = http.StatusConflict
+		}
+		AbortWithError(c, NewError(code, "transaction cannot be added"))
 		return
 	}
 
-	// map state with state response
-	serializer := TransactionSerializer{*hash, *tx}
-
-	// render
-	c.JSON(http.StatusOK, gin.H{"transaction": serializer.Response()})
+	c.JSON(http.StatusCreated, gin.H{})
 }

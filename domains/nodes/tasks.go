@@ -11,6 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/thoas/go-funk"
+
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
@@ -19,16 +23,27 @@ import (
 type BlockHeight uint64
 
 type NodeTaskManager struct {
-	refreshIntervalInSeconds uint64
-	nodeService              *NodeService
-	state                    models.State
-	blockService             services.BlockService
+	syncNodeRefreshIntervalInSeconds uint32
+	createNewBlockIntervalInSeconds  uint32
+
+	state models.State
+
+	nodeService        *NodeService
+	transactionService services.TransactionService
+	blockService       services.BlockService
+
+	isCurrentlyMining bool
+	syncedBlock       chan models.Block
 }
 
+// NewNodeTaskManager handles all the background tasks needed for a node to sync its status
+// as well as mining new blocks
 func NewNodeTaskManager(
-	refreshInterval uint64,
+	syncNodeRefreshIntervalInSeconds uint32,
+	createNewBlockIntervalInSeconds uint32,
 	nodeService *NodeService,
 	state models.State,
+	transactionService services.TransactionService,
 	blockService services.BlockService,
 ) (*NodeTaskManager, error) {
 	if state == nil {
@@ -37,45 +52,122 @@ func NewNodeTaskManager(
 	if nodeService == nil {
 		return nil, errors.New("NewNodeTaskManager: node service cannot be nil")
 	}
+
 	return &NodeTaskManager{
-		refreshIntervalInSeconds: refreshInterval,
-		nodeService:              nodeService,
-		state:                    state,
-		blockService:             blockService,
+		syncNodeRefreshIntervalInSeconds: syncNodeRefreshIntervalInSeconds,
+		createNewBlockIntervalInSeconds:  createNewBlockIntervalInSeconds,
+		nodeService:                      nodeService,
+		state:                            state,
+		transactionService:               transactionService,
+		blockService:                     blockService,
+		syncedBlock:                      make(chan models.Block),
 	}, nil
 }
 
-func (n *NodeTaskManager) Run(ctx context.Context) {
-	ticker := time.NewTicker(time.Second * time.Duration(n.refreshIntervalInSeconds))
+// RunMine starts mining a new block when a new transaction is being submitted
+func (n *NodeTaskManager) RunMine(ctx context.Context) {
+	Logger.Debugf("RunMine: Start mining process...")
+	// ticker
+	ticker := time.NewTicker(time.Second * time.Duration(n.createNewBlockIntervalInSeconds))
+
+	// shared variables
+	var miningCancelCtx context.CancelFunc
 
 	for {
 		select {
 		case <-ticker.C:
-			Logger.Debugf("NodeTaskManager: Run: looking for new nodes within the network")
-			nodeStatus, err := n.runFetchNodeStatusTask()
-			if err != nil {
-				Logger.Errorf("NodeTaskManager: Run: failed to lookup to new nodes: %s", err)
-			}
+			txs := n.transactionService.GetPendingTxs()
+			if len(txs) > 0 && !n.isCurrentlyMining {
+				n.isCurrentlyMining = true
 
-			Logger.Debugf("NodeTaskManager: Run: lookup for a node with a higher block height so we can synchronise")
-			err = n.runSyncNode(nodeStatus)
-			if err != nil {
-				Logger.Errorf("NodeTaskManager: Run: failed to synchronise: %s", err)
+				var miningCtx context.Context
+				var block *models.Block
+				var err error
+				miningCtx, miningCancelCtx = context.WithCancel(context.Background())
+
+				// mine a new block
+				if block, err = n.blockService.Mine(miningCtx, models.PendingBlock{
+					Parent:       n.state.GetLatestBlockHash(),
+					Height:       n.state.GetLatestBlockHeight() + 1,
+					Time:         utils.DefaultTimeService.UnixUint64(),
+					MinerAddress: n.blockService.ThisNodeMiningAddress(),
+					Txs:          txsMapToArr(txs),
+				}); err != nil {
+					Logger.Errorf("RunMine: failed to mine a block: %s", err)
+				} else {
+					// if all ok, add block to database
+					if err = n.state.AddBlock(*block); err != nil {
+						Logger.Errorf("RunMine: failed to add block to state: %s", err)
+					} else {
+						// if all ok, remove the mined transactions
+						n.transactionService.RemovePendingTxs(funk.Keys(txs).([]models.TransactionId))
+					}
+				}
+				n.isCurrentlyMining = false
+			}
+		case block := <-n.syncedBlock:
+			// if we are mining then we might want to remove any pendingTx that is currently been mined
+			if n.isCurrentlyMining {
+				// if there's any pendingTx that has already been mined, we need to remove them from
+				// our pendingTx pool
+				pendingTxs := n.transactionService.GetPendingTxs()
+				var hasFoundAPendingTxInSyncBlock bool
+				for _, tx := range block.Txs {
+					txHash, _ := tx.Hash()
+					if _, exists := pendingTxs[txHash]; exists {
+						// we need to cancel the mining and remove the tx that has been included
+						// in the freshly synced block
+						if !hasFoundAPendingTxInSyncBlock {
+							miningCancelCtx()
+							hasFoundAPendingTxInSyncBlock = true
+						}
+						n.transactionService.RemovePendingTx(txHash)
+					}
+				}
 			}
 		case <-ctx.Done():
-			Logger.Debugf("NodeTaskManager: Run: Stop looking for new nodes within the network")
+			Logger.Debugf("RunMine: stop mining process...")
+			miningCancelCtx()
+			return
+		}
+	}
+}
+
+// RunSync starts the process of syncing the list of nodes within the network as well as this node's database
+func (n *NodeTaskManager) RunSync(ctx context.Context) {
+	ticker := time.NewTicker(time.Second * time.Duration(n.syncNodeRefreshIntervalInSeconds))
+
+	for {
+		select {
+		case <-ticker.C:
+			Logger.Debugf("RunSync: looking for new nodes within the network")
+
+			// first fetch the nodes' status within the network
+			// status contains block height and other peers in network
+			nodeStatus, err := n.runFetchNodeStatus()
+			if err != nil {
+				Logger.Errorf("RunSync: failed to lookup to new nodes: %s", err)
+			}
+
+			// time to synchronise our database as we have other nodes' status block height
+			err = n.runSyncNode(nodeStatus)
+			if err != nil {
+				Logger.Errorf("RunSync: failed to synchronise: %s", err)
+			}
+		case <-ctx.Done():
+			Logger.Debugf("RunSync: Stop looking for new nodes within the network")
 			ticker.Stop()
 		}
 	}
 }
 
-func (n *NodeTaskManager) runFetchNodeStatusTask() (map[NetworkNodeAddress]NetworkNodeStatus, error) {
+func (n *NodeTaskManager) runFetchNodeStatus() (map[NetworkNodeAddress]NetworkNodeStatus, error) {
 	knownNetworkNodes, err := n.nodeService.List()
 	if err != nil {
-		return nil, fmt.Errorf("runFetchNodeStatusTask: failed to list nodes: %w", err)
+		return nil, fmt.Errorf("runFetchNodeStatus: failed to list nodes: %w", err)
 	}
 	if len(knownNetworkNodes) == 0 {
-		Logger.Debugf("runFetchNodeStatusTask: no network nodes found... no sync...")
+		Logger.Debugf("runFetchNodeStatus: no network nodes found... no sync...")
 		return nil, nil
 	}
 
@@ -88,7 +180,7 @@ func (n *NodeTaskManager) runFetchNodeStatusTask() (map[NetworkNodeAddress]Netwo
 	done := make(chan bool)
 	c := make(chan map[NetworkNodeAddress]NetworkNodeStatus)
 
-	// we use a buffered channel, no need for concurrent-safe map
+	// we use a buffered channel, no need for safe concurrent map
 	nodeStatus := make(map[NetworkNodeAddress]NetworkNodeStatus, len(knownNetworkNodes))
 
 	go fetchNodesHeights(done, wg, c, knownNetworkNodes)
@@ -121,7 +213,7 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 			status, err := getNodeStatus(address)
 			if err != nil {
 				nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
-				Logger.Warnf("runFetchNodeStatusTask: failed to reach node: %s", err)
+				Logger.Warnf("runFetchNodeStatus: failed to reach node: %s", err)
 				return
 			}
 			nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
@@ -144,7 +236,7 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 						status, err := getNodeStatus(address)
 						if err != nil {
 							nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
-							Logger.Warnf("runFetchNodeStatusTask: failed to reach node: %s", err)
+							Logger.Warnf("runFetchNodeStatus: failed to reach node: %s", err)
 							return
 						}
 						nodeStatus <- map[NetworkNodeAddress]NetworkNodeStatus{address: status}
@@ -159,30 +251,39 @@ func fetchNodesHeights(done chan<- bool, wg *sync.WaitGroup, nodeStatus chan map
 }
 
 func (n *NodeTaskManager) runSyncNode(nodeStatus map[NetworkNodeAddress]NetworkNodeStatus) error {
+	Logger.Debugf("runSyncNode: synchronisation has started")
+
+	// if no node found in the network, let's stop sync
+	if len(nodeStatus) == 0 {
+		return nil
+	}
+
 	// get current block height
 	state := n.state
 	currentHeight := state.GetLatestBlockHeight()
 
 	// find the node with the highest block height and higher than ours
-	// if condition met, then synchronise, otherwise do not do anything
-	var nodeToSynchFrom map[NetworkNodeAddress]NetworkNodeStatus
+	// if condition met, then sync, otherwise do not do anything
+	var highestHeight uint64
+	var nodeToSyncFrom map[NetworkNodeAddress]NetworkNodeStatus
 	for address, status := range nodeStatus {
-		if currentHeight < status.Height {
-			if nodeToSynchFrom == nil {
-				nodeToSynchFrom = make(map[NetworkNodeAddress]NetworkNodeStatus, 1)
+		if currentHeight < status.Height && highestHeight < status.Height {
+			if nodeToSyncFrom == nil {
+				nodeToSyncFrom = make(map[NetworkNodeAddress]NetworkNodeStatus, 1)
 			}
-			nodeToSynchFrom[address] = status
+			nodeToSyncFrom[address] = status
+			highestHeight = status.Height
 		}
 	}
 
 	// skip sync if couldn't find any node with a higher block height
-	if nodeToSynchFrom == nil {
+	if nodeToSyncFrom == nil {
 		Logger.Debugf("runSyncNode: couldn't find a node with a higher block height than us")
 		return nil
 	}
 
 	// start sync the node
-	for address, status := range nodeToSynchFrom {
+	for address, status := range nodeToSyncFrom {
 		missingBlockCount := status.Height - currentHeight
 		currentHash := state.GetLatestBlockHash()
 
@@ -198,6 +299,7 @@ func (n *NodeTaskManager) runSyncNode(nodeStatus map[NetworkNodeAddress]NetworkN
 		}
 	}
 
+	Logger.Debugf("runSyncNode: synchronisation is over")
 	return nil
 }
 
@@ -299,16 +401,7 @@ func getBlocks(r *http.Response) ([]models.Block, error) {
 
 	blocks = make([]models.Block, len(blocksRes.Blocks))
 	for i, blockRes := range blocksRes.Blocks {
-		// init block structure
-		block := models.Block{
-			Header: models.BlockHeader{
-				Parent: blockRes.Header.Parent,
-				Height: blockRes.Header.Height,
-				Time:   blockRes.Header.Time,
-			},
-		}
-
-		// add transactions
+		// format transactions
 		txs := make([]models.Transaction, len(blockRes.Txs))
 		for y, tx := range blockRes.Txs {
 			txs[y] = models.Transaction{
@@ -316,13 +409,19 @@ func getBlocks(r *http.Response) ([]models.Block, error) {
 				To:     tx.To,
 				Value:  tx.Value,
 				Reason: tx.Reason,
+				Time:   tx.Time,
 			}
 		}
-		block.Txs = txs
-
+		// create block
+		block := models.NewBlock(
+			blockRes.Header.Parent,
+			blockRes.Header.Height,
+			blockRes.Header.Nonce,
+			blockRes.Header.Time,
+			txs,
+		)
 		// add to array of blocks
 		blocks[i] = block
 	}
-
 	return blocks, nil
 }

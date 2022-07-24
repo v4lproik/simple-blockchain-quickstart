@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/v4lproik/simple-blockchain-quickstart/common/utils"
+
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/thoas/go-funk"
@@ -108,7 +110,7 @@ func NewJwtService(verifyingConf VerifyingConf, signingConf SigningConf) (*JwtSe
 func (j *JwtService) SignToken(content interface{}) (string, error) {
 	var signedToken string
 	signingConf := j.signingConf
-	now := time.Now().UTC()
+	now := utils.DefaultTimeService.Now()
 
 	payload, err := json.Marshal(content)
 	if err != nil {

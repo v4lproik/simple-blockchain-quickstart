@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,7 +14,6 @@ import (
 	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/middleware"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
@@ -24,21 +24,20 @@ import (
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/transactions"
 	"github.com/v4lproik/simple-blockchain-quickstart/domains/wallets"
 	Logger "github.com/v4lproik/simple-blockchain-quickstart/log"
-	"github.com/v4lproik/simple-blockchain-quickstart/utils"
 )
 
 type Domain string
 
 const (
 	AUTH         Domain = "AUTH"
-	BALANCES            = "BALANCES"
-	HEALTHZ             = "HEALTHZ"
-	NODES               = "NODES"
-	TRANSACTIONS        = "TRANSACTIONS"
-	WALLETS             = "WALLETS"
+	BALANCES     Domain = "BALANCES"
+	HEALTHZ      Domain = "HEALTHZ"
+	NODES        Domain = "NODES"
+	TRANSACTIONS Domain = "TRANSACTIONS"
+	WALLETS      Domain = "WALLETS"
 )
 
-var apiConf = utils.ApiConf{}
+var apiConf = ApiConf{}
 
 func runHttpServer() {
 	if err := parser.Parse(&apiConf); err != nil {
@@ -72,7 +71,7 @@ func runHttpServer() {
 
 	serverOpts := apiConf.Server.Options
 	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", apiConf.Server.Address, apiConf.Server.Port),
+		Addr:    net.JoinHostPort(apiConf.Server.Address, fmt.Sprintf("%d", apiConf.Server.Port)),
 		Handler: r.Handler(),
 	}
 
@@ -99,9 +98,8 @@ func bindFunctionalDomains(r *gin.Engine) {
 		Logger.Fatalf("bindFunctionalDomains: cannot initialise the state: %s", err)
 	}
 	// initiate services
-	errorBuilder := common.NewErrorBuilder()
 	fileTransactionService := services.NewFileTransactionService()
-	keystoreService, err := wallets.NewEthKeystore(opts.KeystoreDirPath)
+	keystoreService, err := services.NewEthKeystore(opts.KeystoreDirPath)
 	if err != nil {
 		Logger.Fatalf("bindFunctionalDomains: cannot create keystore service: %s", err)
 	}
@@ -137,14 +135,19 @@ func bindFunctionalDomains(r *gin.Engine) {
 		Logger.Fatalf("bindFunctionalDomains: cannot create node service: %s", err)
 	}
 
-	blockService, err := services.NewFileBlockService(opts.TransactionsFilePath)
+	miningAccount, _ := models.NewAccount(opts.MinerAddress)
+	blockService, err := services.NewFileBlockService(
+		opts.TransactionsFilePath,
+		apiConf.Consensus.Complexity,
+		miningAccount,
+	)
 	if err != nil {
 		Logger.Fatalf("bindFunctionalDomains: cannot create block service: %s", err)
 	}
 
 	// initiate middlewares
 	auto401 := apiConf.Auth.IsAuthenticationActivated
-	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, errorBuilder, jwtService)
+	authMiddleware := middleware.AuthWebSessionMiddleware(auto401, jwtService)
 
 	// run domains
 	for _, domain := range apiConf.Domains.ToStart {
@@ -152,17 +155,26 @@ func bindFunctionalDomains(r *gin.Engine) {
 		case AUTH:
 			auth.RunDomain(r, jwtService, &passwordService, userService, apiConf.Auth.IsJwksEndpointActivated)
 		case BALANCES:
-			balances.RunDomain(r, balances.NewBalancesEnv(state, errorBuilder), authMiddleware)
+			balances.RunDomain(r, balances.NewBalancesEnv(state), authMiddleware)
 		case HEALTHZ:
 			healthz.RunDomain(r)
 		case NODES:
-			nodes.RunDomain(r, nodeService, state, blockService)
+			if err := nodes.RunDomain(
+				r,
+				nodeService,
+				state,
+				fileTransactionService,
+				blockService,
+				apiConf.Synchronisation.RefreshIntervalInSeconds,
+				apiConf.Consensus.CreateNewBlockIntervalInSeconds,
+			); err != nil {
+				Logger.Fatalf("bindFunctionalDomains: cannot start the node domain: %w", err)
+			}
 		case TRANSACTIONS:
 			transactions.RunDomain(r, state, fileTransactionService, authMiddleware)
 		case WALLETS:
 			wallets.RunDomain(r, &wallets.WalletsEnv{
-				Keystore:     keystoreService,
-				ErrorBuilder: errorBuilder,
+				Keystore: keystoreService,
 			}, authMiddleware)
 		default:
 			Logger.Fatalf("bindFunctionalDomains: the functional domain %s is unknown", domain)

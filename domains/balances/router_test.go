@@ -113,7 +113,7 @@ func TestBalancesEnv_ListBalances(t *testing.T) {
 
 func initServer(r *gin.Engine) {
 	if balanceEnv == nil {
-		balanceEnv = NewBalancesEnv(state, test.ErrorBuilder)
+		balanceEnv = NewBalancesEnv(state)
 	}
 	RunDomain(r, balanceEnv)
 }

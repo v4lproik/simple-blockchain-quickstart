@@ -24,11 +24,14 @@ func main() {
 	// parse command line arguments which set up the application
 	_, err := parser.Parse()
 	if err != nil {
-		panic(err)
+		Logger.Panicf("main: failed to parse cli args: %s", err)
 	}
 
 	// check environment
-	checkArgs()
+	err = checkArgs()
+	if err != nil {
+		Logger.Panicf("main: failed to verify cli args: %s", err)
+	}
 
 	// init Logger
 	Logger.InitLogger(env.isProd(), opts.LogFilePath)

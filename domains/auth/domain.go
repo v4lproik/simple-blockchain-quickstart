@@ -2,7 +2,6 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/common/services"
 )
 
@@ -16,7 +15,6 @@ func RunDomain(r *gin.Engine,
 ) {
 	v1 := r.Group(AUTH_DOMAIN_URL)
 	AuthRegister(v1.Group("/"), &AuthEnv{
-		errorBuilder:           common.NewErrorBuilder(),
 		jwtService:             jwtService,
 		userService:            userService,
 		passwordService:        passwordService,

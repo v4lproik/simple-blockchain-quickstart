@@ -3,40 +3,91 @@ package services
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/v4lproik/simple-blockchain-quickstart/common/models"
 )
 
+var (
+	ErrMarshalTx       = errors.New("marshal error")
+	ErrTxAlreadyInPool = errors.New("transaction is already in pool")
+)
+
 type TransactionService interface {
-	AddTransaction(models.State, *models.Transaction) (*models.Hash, error)
+	AddPendingTx(models.Transaction) error
+	GetPendingTxs() map[models.TransactionId]models.Transaction
+	RemovePendingTx(models.TransactionId)
+	RemovePendingTxs([]models.TransactionId)
 }
 
-type FileTransactionService struct{}
+type FileTransactionService struct {
+	mu sync.Mutex
 
-func NewFileTransactionService() FileTransactionService {
-	return FileTransactionService{}
+	pendingTxPool map[models.TransactionId]models.Transaction
 }
 
-func (a FileTransactionService) AddTransaction(state models.State, tx *models.Transaction) (*models.Hash, error) {
-	if state == nil {
-		return nil, errors.New("AddTransaction: nil state")
+// NewFileTransactionService default constructor
+func NewFileTransactionService() *FileTransactionService {
+	return &FileTransactionService{
+		pendingTxPool: make(map[models.TransactionId]models.Transaction),
 	}
+}
 
-	if tx == nil {
-		return nil, errors.New("AddTransaction: nil transaction")
-	}
-
-	// add transaction to state
-	err := state.Add(*tx)
+// AddPendingTx adds a transaction to the pool
+func (a *FileTransactionService) AddPendingTx(tx models.Transaction) error {
+	// add transaction to the pool
+	err := a.addPendingTxToPool(tx)
 	if err != nil {
-		return nil, fmt.Errorf("AddTransaction: failed to add tx: %s", err)
+		return fmt.Errorf("AddPendingTx: failed to add transaction to mempool: %w", err)
 	}
 
-	// persist new state to disk
-	hash, err := state.Persist()
+	return nil
+}
+
+// addPendingTxToPool check whether it's a valid transaction and eventually add it to the pool
+func (a *FileTransactionService) addPendingTxToPool(tx models.Transaction) error {
+	hash, err := tx.Hash()
 	if err != nil {
-		return nil, fmt.Errorf("AddTransaction: failed to persist state: %s", err)
+		return fmt.Errorf("addPendingTxToPool: %w: %s", ErrMarshalTx, err.Error())
 	}
 
-	return &hash, nil
+	// TODO: Implement verifyTx(tx models.Transaction).
+	// Needs models.state refacto
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if _, ok := a.pendingTxPool[hash]; ok {
+		return fmt.Errorf("addPendingTxToPool: %w", ErrTxAlreadyInPool)
+	}
+
+	a.pendingTxPool[hash] = tx
+
+	return nil
+}
+
+// GetPendingTxs get pending transactions
+func (a *FileTransactionService) GetPendingTxs() map[models.TransactionId]models.Transaction {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.pendingTxPool
+}
+
+// RemovePendingTx remove transaction from pool
+func (a *FileTransactionService) RemovePendingTx(id models.TransactionId) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	delete(a.pendingTxPool, id)
+}
+
+// RemovePendingTxs remove transactions from pool
+func (a *FileTransactionService) RemovePendingTxs(ids []models.TransactionId) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	for _, id := range ids {
+		delete(a.pendingTxPool, id)
+	}
 }

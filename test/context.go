@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/v4lproik/simple-blockchain-quickstart/common"
 	"github.com/v4lproik/simple-blockchain-quickstart/log"
 )
 
@@ -28,14 +27,11 @@ var (
 		asserts.Equal(wCodeE, wCodeA, "Response Status - "+testName)
 		asserts.Regexp(wBodyE, wBodyA, "Response Content - "+testName)
 	}
-
-	// services used across the entire application
-	ErrorBuilder = common.NewErrorBuilder()
 )
 
 func InitTestContext() {
 	setContextSafeGuard.Do(func() {
-		// test env, not prod
+		// init logger
 		isProd := false
 		// stdout
 		logPath := ""

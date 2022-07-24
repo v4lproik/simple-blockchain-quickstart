@@ -13,7 +13,7 @@ make dep
 ```
 ### Set env variables  
 ```
-sh config/local.env
+source config/local.env
 ```
 ### Building  
 ```
@@ -38,9 +38,6 @@ go build -o ./bin/simple-blockchain-quickstart
 1.657907504219885e+09	info	Nodes file: ./testdata/node1/network_nodes.toml
 1.657907504219887e+09	info	Keystore dir: ./testdata/node1/keystore/
 1.657907504219889e+09	info	Output: console
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
-- using env:	export GIN_MODE=release
-- using code:	gin.SetMode(gin.ReleaseMode)
 
 [GIN-debug] POST   /api/auth/login           --> github.com/v4lproik/simple-blockchain-quickstart/domains/auth.AuthEnv.Login-fm (5 handlers)
 [GIN-debug] GET    /api/auth/.well-known/jwks.json --> github.com/v4lproik/gin-jwks-rsa.Jkws.func1 (5 handlers)
@@ -116,7 +113,8 @@ curl localhost:8080/api/balances/ -X POST                                       
 {"balances":[{"account":"0x7b65a12633dbe9a413b17db515732d69e684ebe2","value":998000},{"account":"0xa6aa1c9106f0c0d0895bb72f40cfc830180ebeaf","value":1003000}]}
 ```
 ### Test data
-In the folder ```./testdata/node*/``` you can find some data that could be used to test the application.  
+In the folder ```./testdata/node*/``` you can find some data that could be used to test the application.
+#### Api users
 ```
 Username: v4lproik
 Password: P@assword-to-access-api1
@@ -134,4 +132,10 @@ Hash    : $argon2id$v=19$m=65536,t=3,p=2$j2yd8FWqhApKrrqmkkLMQA$Lfh/7K+oP3IWdTrQ
 Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore2
 Keystore: testdata/node1/keystore/UTC--2022-06-26T13-50-53.976229800Z--a6aa1c9106f0c0d0895bb72f40cfc830180ebeaf
+```
+#### Miners
+```
+Account : 0x01fc1af4a56cde68675dc44cabd486e8d3559f07
+Password: P@assword-to-access-keystore3
+Keystore: testdata/node1/keystore/UTC--2022-07-19T22-42-22.558797000Z--01fc1af4a56cde68675dc44cabd486e8d3559f07
 ```

@@ -12,17 +12,6 @@ jobs:
       GOPATH: "/home/circleci/.go_workspace"
       GODIST: "go1.18.3.linux-amd64.tar.gz"
 
-      #api variables
-      SBQ_ENV: "ci_cd"
-      SBQ_SERVER_ADDRESS: "localhost"
-      SBQ_SERVER_PORT: "8080"
-      SBQ_SERVER_IS_SSL: "false"
-      SBQ_SERVER_CERT_FILE: ""
-      SBQ_SERVER_KEY_FILE: ""
-      SBQ_SERVER_HTTP_CORS_ALLOWED_ORIGINS: "http://localhost:8080"
-      SBQ_SERVER_HTTP_CORS_ALLOWED_METHODS: "GET,POST"
-      SBQ_SERVER_HTTP_CORS_ALLOWED_HEADERS: ""
-
     steps:
       - checkout
 
@@ -63,19 +52,10 @@ jobs:
             fi
 
       - run:
-          name: Run Unit/Integration tests
+          name: Source application env variables
           command: |
-            make test -B
+            source config/ci_cd.env
 
-      - run:
-          name: Run code quality tests
-          command: |
-            go install mvdan.cc/gofumpt@latest
-            res=$(gofumpt -l .)
-            if [[ -n $res ]]; then
-              echo "$res"
-              exit 1
-            fi
       - run:
           name: Run Unit/Integration tests
           command: |
