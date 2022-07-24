@@ -14,7 +14,7 @@ type TimeService interface {
 
 type SimpleTimeService struct{}
 
-func (t *SimpleTimeService) Now() time.Time {
+func (*SimpleTimeService) Now() time.Time {
 	return time.Now().UTC()
 }
 
