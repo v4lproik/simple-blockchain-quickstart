@@ -50,7 +50,7 @@ go build -o ./bin/simple-blockchain-quickstart
 ```
 ### Run in container
 The docker image has been built so the mandatory options are passed in an env file. The extra options are passed through the variable ```cmd```.
-To sum up ```cmd``` is responsible for switching from running the app as a client or as a node. The options related to the app itself are stored in ```config/<env>.conf```.
+To sum up ```cmd``` is responsible for switching from running the app as a client or as a node. The options related to the app itself are stored in ```config/local.conf```.
 ```
 #first remove all images locally if you rebuild from this folder
 docker-compose down --rmi all
@@ -70,6 +70,11 @@ make format
 > gofumpt -l -w .
 args.go
 commands/password.go
+```
+## Generate coverage
+```
+make test-coverage-install
+make test-coverage
 ```
 ## Generate doc
 1. Install [swag](https://github.com/swaggo/swag)
@@ -124,6 +129,7 @@ Account : 0x7b65a12633dbe9a413b17db515732d69e684ebe2
 Password: P@assword-to-access-keystore1
 Keystore: testdata/node1/keystore/UTC--2022-06-26T13-49-16.552956900Z--7b65a12633dbe9a413b17db515732d69e684ebe2
 ```
+
 ```
 Username: cloudvenger
 Password: P@assword-to-access-api2
