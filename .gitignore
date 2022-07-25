@@ -18,5 +18,7 @@ simple-blockchain-quickstart
 /go.sum
 /.idea/.*
 coverage.txt
+coverage.out
+coverage/.*
 docs/.*
 .air.toml

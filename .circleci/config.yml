@@ -33,11 +33,10 @@ jobs:
             - go-mod-cache-v2-{{ arch }}-{{ .Branch }}-{{ checksum "go.mod" }}
 
       - run:
-          name: Install test dependencies
+          name: Install dependencies
           command: |
             cd "$CIRCLE_WORKING_DIRECTORY"
             sudo chown -R $(id -u):$(id -g) $CIRCLE_WORKING_DIRECTORY
-            sudo chmod +x $CIRCLE_WORKING_DIRECTORY/deployment_script/test.sh
             make dep
             go mod tidy
 
@@ -75,9 +74,11 @@ jobs:
             apiary publish --api-name=simpleblockchainquickstart --path=docs/swagger.yaml
 
       - run:
-          name: Upload cover report
+          name: Generate coverage & cover report
           command: |
-            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+            make test-coverage-install
+            make test-coverage
+            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -s ./coverage/
 
       - run:
           name: Deploy Master to Docker Hub

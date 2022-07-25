@@ -2,7 +2,6 @@ BINARY=simple-blockchain-quickstart
 HOT_RELOAD_BIN=air
 
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
-TEST=deployment_script/test.sh
 
 #variables specific to node1
 SBQ_GENESIS_FILE_PATH_1 = ${SBQ_GENESIS_FILE_PATH_NODE_1}
@@ -69,7 +68,17 @@ clean:
 	rm ./bin/${BINARY}
 
 test:
-	@if [ -f ${TEST} ] ; then ./${TEST} ; fi
+	mkdir -p coverage
+	go test -coverprofile=coverage/coverage.out -covermode=count ./...
+	go tool cover -html=coverage/coverage.out -o coverage/coverage.html
+
+test-coverage-install:
+	go get github.com/dave/courtney
+	go install github.com/dave/courtney
+
+test-coverage:
+	mkdir -p coverage
+	courtney -v -o coverage/coverage.out ./...
 
 vet:
 	go vet
